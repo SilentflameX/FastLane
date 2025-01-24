@@ -16,6 +16,8 @@ import io.ktor.server.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import kotlinx.coroutines.*
+import java.net.InetAddress
+import java.net.NetworkInterface
 import kotlin.system.*
 
 object KtorServer {
@@ -23,8 +25,14 @@ object KtorServer {
     var isServer = false
 
     fun startServer(port: Int = 8080) {
+        if(isServer)
+        {
+            val ipAddr = getServerIpAddress()
+            println(ipAddr)
+            return
+        }
         isServer = true
-        embeddedServer(Netty, port = 8080,host = "10.0.2.16") {
+        embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
             routing {
                 get("/") {
                     call.respondText("Hello, world!")
@@ -34,11 +42,12 @@ object KtorServer {
                 }
             }
         }.start(wait = true)
+
     }
 
-    fun DataToString(data : DataToSync): String {
+    fun DataToString(data: DataToSync): String {
         var retStr = ""
-        retStr = data.x.toString() + "," + data.y.toString() + "," +data.z.toString()
+        retStr = data.x.toString() + "," + data.y.toString() + "," + data.z.toString()
         return retStr
     }
 
@@ -46,5 +55,25 @@ object KtorServer {
     fun stopServer() {
         server?.stop(1000, 2000)
         server = null
+    }
+
+    fun getServerIpAddress(): String? {
+        try {
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            for (networkInterface in interfaces) {
+                if (networkInterface.isLoopback || !networkInterface.isUp) continue
+                for (inetAddress in networkInterface.inetAddresses) {
+                    if (!inetAddress.isLoopbackAddress && inetAddress is InetAddress) {
+                        val hostAddress = inetAddress.hostAddress
+                        // Skip IPv6 addresses if you only want IPv4
+                        if (hostAddress.contains(":")) continue
+                        return hostAddress
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
     }
 }

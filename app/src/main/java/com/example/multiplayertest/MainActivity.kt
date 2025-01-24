@@ -23,6 +23,8 @@ import com.example.multiplayertest.ui.theme.MultiplayerTestTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import MyGLRenderer
+import MyGLSurfaceView
 
 private val serverScope = CoroutineScope(Dispatchers.IO)
 private val clientScope = CoroutineScope(Dispatchers.IO)
@@ -36,11 +38,18 @@ class DataToSync(x : Int,y: Int, z:Int)
 }
 
 class MainActivity : ComponentActivity() {
-
+    private lateinit var glSurfaceView: MyGLSurfaceView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
+
+        // Initialize the GLSurfaceView
+        glSurfaceView = MyGLSurfaceView(this)
+
+        // Set the GLSurfaceView as the content view
+        setContentView(glSurfaceView)
+
+        /*setContent {
             MultiplayerTestTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
@@ -49,7 +58,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-        }
+        }*/
 
         // Start the server in a coroutine
 
@@ -80,7 +89,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             onClick = {
                 connected = true
                 clientScope.launch {
-                    KtorClient.connectToServer("10.0.2.16", 8080)
+                    KtorClient.connectToServer("192.168.1.198", 8080)
                 }
             }) {
             Text("Client")
