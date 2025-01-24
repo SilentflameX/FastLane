@@ -1,6 +1,6 @@
+import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
-import android.util.Log
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -8,88 +8,168 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.opengl.GLUtils
+import java.nio.ShortBuffer
+import android.opengl.Matrix
+import com.example.multiplayertest.GameObjects.Sprite
+import com.example.multiplayertest.GameScene
 
+class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
-class MyGLRenderer : GLSurfaceView.Renderer {
+    private var context = _context
 
-    private lateinit var vertexBuffer: FloatBuffer
-
-    private val triangleCoords = floatArrayOf(
-        0.0f,  0.5f, 0.0f,  // Top
-        -0.5f, -0.5f, 0.0f,  // Bottom left
-        0.5f, -0.5f, 0.0f   // Bottom right
+    private val vertexCoords = floatArrayOf(
+        -0.5f, 0.5f, 0.0f,  // Top-left
+        -0.5f, -0.5f, 0.0f,  // Bottom-left
+        0.5f, -0.5f, 0.0f,  // Bottom-right
+        0.5f, 0.5f, 0.0f   // Top-right
     )
 
-    // Color (RGBA)
-    private val color = floatArrayOf(1.0f, 0.0f, 0.0f, 1.0f)
+    private val textureCoords = floatArrayOf(
+        0.0f, 0.0f, // Top-left
+        0.0f, 1.0f, // Bottom-left
+        1.0f, 1.0f, // Bottom-right
+        1.0f, 0.0f  // Top-right
+    )
 
-    init {
-        // Allocate a ByteBuffer for the vertices
-        val bb = ByteBuffer.allocateDirect(triangleCoords.size * 4)
-        bb.order(ByteOrder.nativeOrder())
-        vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(triangleCoords)
-        vertexBuffer.position(0)
-    }
+    private val drawOrder = shortArrayOf(0, 1, 2, 0, 2, 3) // Order to draw vertices
+
+
+    private val vertexBuffer: FloatBuffer =
+        ByteBuffer.allocateDirect(vertexCoords.size * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer().apply {
+                put(vertexCoords)
+                position(0)
+            }
+
+    private val textureBuffer: FloatBuffer =
+        ByteBuffer.allocateDirect(textureCoords.size * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer().apply {
+                put(textureCoords)
+                position(0)
+            }
+
+    private val drawListBuffer: ShortBuffer =
+        ByteBuffer.allocateDirect(drawOrder.size * 2)
+            .order(ByteOrder.nativeOrder())
+            .asShortBuffer().apply {
+                put(drawOrder)
+                position(0)
+            }
 
     private val vertexShaderCode = """
-    attribute vec4 vPosition;
+    attribute vec4 vPosition;  // Vertex position (x, y, z, w)
+    attribute vec2 vTexCoord; // Texture coordinates (u, v)
+    
+    uniform mat4 uMVPMatrix;  // Model-View-Projection matrix
+    
+    varying vec2 outTexCoord; // Pass texture coordinates to fragment shader
+    
     void main() {
-        gl_Position = vPosition;
+        gl_Position = uMVPMatrix * vPosition; // Transform vertex position
+        outTexCoord = vTexCoord;             // Pass texture coordinates
     }
 """.trimIndent()
 
     private val fragmentShaderCode = """
-    precision mediump float;
+    precision mediump float;   // Precision for fragment shader calculations
+
+    uniform sampler2D uTexture; // Texture sampler
+    varying vec2 outTexCoord;   // Interpolated texture coordinates
+
     void main() {
-        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green color
+        gl_FragColor = texture2D(uTexture, outTexCoord); // Sample texture and set pixel color
     }
 """.trimIndent()
 
-    private var shaderProgram : Int = 0
+    private var shaderProgram: Int = -1
 
+    private val viewMatrix = FloatArray(16)
+    private val projectionMatrix = FloatArray(16)
+    private val mvpMatrix = FloatArray(16)
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-
-        shaderProgram = createProgram(vertexShaderCode, fragmentShaderCode)
-        // Set the background color (RGBA)
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+        // Compile shaders and link program
+        shaderProgram = createProgram(vertexShaderCode, fragmentShaderCode)
+        GameScene.Start()
     }
+
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         // Adjust the viewport based on geometry changes
         GLES20.glViewport(0, 0, width, height)
+
+        val ratio = width.toFloat() / height
+        Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 3f, 7f)
+
+        // Set the camera position
+        Matrix.setLookAtM(
+            viewMatrix, 0,
+            0f, 0f, 5f,  // Camera position
+            0f, 0f, 0f,  // Look-at point
+            0f, 1f, 0f   // Up vector
+        )
     }
 
-    override fun onDrawFrame(gl: GL10?) {
-        // Clear the screen
+    private fun drawFrame()
+    {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-        // Use the program
         GLES20.glUseProgram(shaderProgram)
 
-        // Get attribute and uniform locations
+        // Get handles
         val positionHandle = GLES20.glGetAttribLocation(shaderProgram, "vPosition")
-        val colorHandle = GLES20.glGetUniformLocation(shaderProgram, "vColor")
+        val texCoordHandle = GLES20.glGetAttribLocation(shaderProgram, "vTexCoord")
+        val mvpMatrixHandle = GLES20.glGetUniformLocation(shaderProgram, "uMVPMatrix")
+        val textureHandle = GLES20.glGetUniformLocation(shaderProgram, "uTexture")
 
-        // Pass the vertex data
+        // Enable vertex arrays
         GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glVertexAttribPointer(
-            positionHandle,
-            3, GLES20.GL_FLOAT, false,
-            3 * 4, vertexBuffer
-        )
+        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer)
 
-        // Pass the color data
-        GLES20.glUniform4fv(colorHandle, 1, color, 0)
+        GLES20.glEnableVertexAttribArray(texCoordHandle)
+        GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer)
 
-        // Draw the triangle
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
+        for (go in GameScene.goList) {
+            // Bind the texture
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, go.sprite.textureId)
+            GLES20.glUniform1i(textureHandle, 0)
 
-        // Disable the vertex array
+            // Apply transformation matrix
+            val mvpMatrix = FloatArray(16)
+            Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, go.sprite.modelMatrix, 0)
+             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
+            GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0)
+
+            // Draw the object
+            GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.size, GLES20.GL_UNSIGNED_SHORT, drawListBuffer)
+        }
+
+        // Disable vertex arrays
         GLES20.glDisableVertexAttribArray(positionHandle)
+        GLES20.glDisableVertexAttribArray(texCoordHandle)
     }
 
+    var lastTime : Long = 0
+
+    override fun onDrawFrame(gl: GL10?) {
+        // Calculate delta time
+
+        val currentTime = System.nanoTime()
+        val deltaTime = (currentTime - lastTime) / 1_000_000_000.0f // Convert to seconds
+        lastTime = currentTime
+
+        // Update game state
+        GameScene.Update(deltaTime)
+
+        drawFrame()
+    }
 
     fun loadShader(type: Int, shaderCode: String): Int {
         // Create a shader object
@@ -129,8 +209,35 @@ class MyGLRenderer : GLSurfaceView.Renderer {
             GLES20.glDeleteProgram(program)
             throw RuntimeException("Program linking failed: $error")
         }
-
         return program
+    }
+
+
+    fun loadTexture(resourceId: Int): Int {
+        val textureHandle = IntArray(1)
+
+        // Generate a texture object
+        GLES20.glGenTextures(1, textureHandle, 0)
+        if (textureHandle[0] == 0) {
+            throw RuntimeException("Error generating texture handle")
+        }
+
+        // Load the bitmap from resources
+        val bitmap: Bitmap =
+            BitmapFactory.decodeResource(context.resources, resourceId)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0])
+
+        // Set texture parameters
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+
+        // Load the bitmap into the bound texture
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+
+        // Recycle the bitmap, since its data is now on the GPU
+        bitmap.recycle()
+
+        return textureHandle[0]
     }
 
 }
