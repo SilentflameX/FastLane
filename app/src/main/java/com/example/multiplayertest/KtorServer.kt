@@ -1,63 +1,106 @@
 //import io.ktor.application.*
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.multiplayertest.DataToSync
-import com.example.multiplayertest.MainActivity
-import com.example.multiplayertest.data
-import io.ktor.http.*
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
-import io.ktor.utils.io.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import kotlinx.coroutines.*
+import io.ktor.network.selector.SelectorManager
+import io.ktor.network.sockets.Socket
+import io.ktor.network.sockets.aSocket
+import io.ktor.network.sockets.openReadChannel
+import io.ktor.network.sockets.openWriteChannel
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.readUTF8Line
+import io.ktor.utils.io.writeStringUtf8
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.NetworkInterface
-import kotlin.system.*
+import kotlin.concurrent.thread
 
 object KtorServer {
-    private var server: NettyApplicationEngine? = null
     var isServer = false
 
-    fun startServer(port: Int = 8080) {
-        if(isServer)
-        {
-            val ipAddr = getServerIpAddress()
-            println(ipAddr)
-            return
+    class ClientInfo(_socket : Socket,  _rChannel : ByteReadChannel, _sChannel : ByteWriteChannel, _cID : Int){
+        var socket = _socket
+        var receiveChannel = _rChannel
+        var sendChannel = _sChannel
+        var clientID = _cID
+    }
+
+    var clientsList = mutableListOf<ClientInfo>()
+
+    fun StartServer(_hostIP: String, _hostPort: Int) : Boolean {
+        if (isServer)
+            return false
+        thread {
+            runBlocking {
+                ServerLoop(_hostIP, _hostPort)
+            }
         }
         isServer = true
-        embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
-            routing {
-                get("/") {
-                    call.respondText("Hello, world!")
-                }
-                get("/position") {
-                    call.respond(DataToString(data.value))
+        return true
+    }
+
+    fun Update(deltaTime: Float){
+
+    }
+
+    private suspend fun ServerLoop(_hostIP: String, _hostPort: Int){
+        val selectorManager = SelectorManager(Dispatchers.IO)
+        val serverSocket = aSocket(selectorManager).tcp().bind(_hostIP, _hostPort)
+        println("Server: Server Started")
+
+        while (true) {
+            println("Looking for clients")
+            var socket = serverSocket.accept()
+            var receiveChannel = socket.openReadChannel()
+            var sendChannel = socket.openWriteChannel(autoFlush = true)
+            var newClient = ClientInfo(socket, receiveChannel, sendChannel,clientsList.size)
+            clientsList.add(newClient)
+            println("Server: Client Connected :${newClient.clientID}")
+
+            thread {
+                runBlocking {
+                    CheckMessages(newClient.clientID)
                 }
             }
-        }.start(wait = true)
+        }
 
     }
 
-    fun DataToString(data: DataToSync): String {
-        var retStr = ""
-        retStr = data.x.toString() + "," + data.y.toString() + "," + data.z.toString()
-        return retStr
+    private suspend fun CheckMessages(clientID: Int) = coroutineScope{
+        while (true) {
+            val data = clientsList[clientID].receiveChannel.readUTF8Line()
+            if(data != null) {
+                println("Server: Message recieved from client:$clientID")
+                //Read and then send to all connected
+                for (client in clientsList)
+                    client.sendChannel.writeStringUtf8(data + "\n")
+                println("Server: Send to total clients:${clientsList.size}")
+            }
+        }
     }
 
 
-    fun stopServer() {
-        server?.stop(1000, 2000)
-        server = null
+    private suspend fun SendData(clientID: Int,packet: String) = coroutineScope {
+        clientsList[clientID].sendChannel.writeStringUtf8(packet)
     }
 
-    fun getServerIpAddress(): String? {
+    fun SendPacketToClient(clientID: Int,packet: String) {
+        if (!isServer) return
+
+        //Maybe can create some buffer here or add all into 1 packet and send at once
+        GlobalScope.async {
+            SendData(clientID, packet)
+        }
+    }
+
+    fun StopServer() {
+        //socket.close()
+    }
+
+    fun GetServerIpAddress(): String? {
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces()
             for (networkInterface in interfaces) {

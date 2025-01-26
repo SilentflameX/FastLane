@@ -1,5 +1,5 @@
 package com.example.multiplayertest.GameObjects
 
-class GameObject {
+open class GameObject {
     var sprite = Sprite()
 }

@@ -5,16 +5,9 @@ import KtorServer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.multiplayertest.ui.theme.MultiplayerTestTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,17 +19,12 @@ import android.widget.Toast
 private val serverScope = CoroutineScope(Dispatchers.IO)
 private val clientScope = CoroutineScope(Dispatchers.IO)
 
-class DataToSync(x : Int,y: Int, z:Int)
-{
-    var x by mutableStateOf(0)
-    var y by mutableStateOf(0)
-    var z by mutableStateOf(0)
 
-}
 lateinit var glSurfaceView: GLSurfaceView
 lateinit var glRenderer: MyGLRenderer
-var connected = false
-var data = mutableStateOf(DataToSync(0,0,0))
+var serverConnected = false
+var clientConnected = false
+
 
 class MainActivity : ComponentActivity() {
 
@@ -61,31 +49,41 @@ class MainActivity : ComponentActivity() {
         // Set up button interactions
         val button1: Button = findViewById(R.id.button1)
         button1.setOnClickListener {
-            if (connected) {
-                data.value.y += 1
-            } else {
-                connected = true
+            if (serverConnected) {
                 serverScope.launch {
-                    KtorServer.startServer(8080)
+                    //KtorServer.SendData()
+                }
+            } else {
+                serverConnected = true
+                serverScope.launch {
+                    KtorServer.StartServer("0.0.0.0",9080)
                 }
             }
         }
 
         val button2: Button = findViewById(R.id.button2)
         button2.setOnClickListener {
-            if(connected) {
-                KtorClient.getData()
-                Toast.makeText(this, KtorServer.DataToString(data.value), Toast.LENGTH_SHORT).show()
+            if(clientConnected) {
+                clientScope.launch {
+                    //KtorClient.GetData()
+                    GameScene.TestUpdateCar()
+                }
+                //Toast.makeText(this, KtorServer.DataToString(data.value), Toast.LENGTH_SHORT).show()
             }
             else {
-                connected = true
+                clientConnected = true
                 clientScope.launch {
-                    KtorClient.connectToServer("192.168.1.198", 8080)
+                    //KtorClient.ConnectToServer("localhost", 9080)
+                    KtorClient.ConnectToServer("localhost", 8080)
+
+                    //KtorClient.ConnectToServer("10.0.2.2", 9090)
+
                 }
             }
         }
     }
 }
+/*
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     var connected = false
@@ -99,7 +97,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             onClick = {
                 connected = true
                 serverScope.launch {
-                    KtorServer.startServer(8080)
+                    KtorServer.startServer("10.0.2.15",8090)
                 }
             }) {
             Text("Server")
@@ -108,7 +106,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             onClick = {
                 connected = true
                 clientScope.launch {
-                    KtorClient.connectToServer("192.168.1.198", 8080)
+                    KtorClient.connectToServer("192.168.1.198", 8000)
                 }
             }) {
             Text("Client")
@@ -140,11 +138,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 
 }
+*/
 
+/*
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     MultiplayerTestTheme {
         Greeting("Android")
     }
-}
+}*/

@@ -13,7 +13,6 @@ import android.graphics.BitmapFactory
 import android.opengl.GLUtils
 import java.nio.ShortBuffer
 import android.opengl.Matrix
-import com.example.multiplayertest.GameObjects.Sprite
 import com.example.multiplayertest.GameScene
 
 class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
@@ -142,6 +141,7 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
             GLES20.glUniform1i(textureHandle, 0)
 
             // Apply transformation matrix
+            go.sprite.UpdateMatrix()
             val mvpMatrix = FloatArray(16)
             Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, go.sprite.modelMatrix, 0)
              Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
@@ -167,6 +167,8 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
         // Update game state
         GameScene.Update(deltaTime)
+        KtorClient.Update(deltaTime)
+        KtorServer.Update(deltaTime)
 
         drawFrame()
     }
