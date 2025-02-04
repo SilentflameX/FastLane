@@ -1,20 +1,13 @@
 package com.example.multiplayertest
 
-import KtorClient
-import KtorServer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import MyGLRenderer
 import android.opengl.GLSurfaceView
 import android.widget.Button
-import android.widget.Toast
 
 private val serverScope = CoroutineScope(Dispatchers.IO)
 private val clientScope = CoroutineScope(Dispatchers.IO)
@@ -47,39 +40,24 @@ class MainActivity : ComponentActivity() {
         glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
         // Set up button interactions
-        val button1: Button = findViewById(R.id.button1)
-        button1.setOnClickListener {
-            if (serverConnected) {
-                serverScope.launch {
-                    //KtorServer.SendData()
-                }
-            } else {
-                serverConnected = true
-                serverScope.launch {
-                    KtorServer.StartServer("0.0.0.0",9080)
-                }
-            }
+        val upButton: Button = findViewById(R.id.upButton)
+        upButton.setOnClickListener {
+            GameScene.TempMoveCar(0)
         }
 
-        val button2: Button = findViewById(R.id.button2)
-        button2.setOnClickListener {
-            if(clientConnected) {
-                clientScope.launch {
-                    //KtorClient.GetData()
-                    GameScene.TestUpdateCar()
-                }
-                //Toast.makeText(this, KtorServer.DataToString(data.value), Toast.LENGTH_SHORT).show()
-            }
-            else {
-                clientConnected = true
-                clientScope.launch {
-                    //KtorClient.ConnectToServer("localhost", 9080)
-                    KtorClient.ConnectToServer("localhost", 8080)
+        val downButton: Button = findViewById(R.id.downButton)
+        downButton.setOnClickListener {
+            GameScene.TempMoveCar(1)
+        }
 
-                    //KtorClient.ConnectToServer("10.0.2.2", 9090)
+        val leftButton: Button = findViewById(R.id.leftButton)
+        leftButton.setOnClickListener {
+            GameScene.TempMoveCar(2)
+        }
 
-                }
-            }
+        val rightButton: Button = findViewById(R.id.rightButton)
+        rightButton.setOnClickListener {
+            GameScene.TempMoveCar(3)
         }
     }
 }

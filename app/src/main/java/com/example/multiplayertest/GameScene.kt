@@ -37,4 +37,16 @@ object GameScene {
     fun TestUpdateCar(){
         blueCar2.UpdateSyncedData("Position", blueCar2.sprite.position + Vector3(0.1f,0.1f,0.1f))
     }
+
+    fun TempMoveCar(dir : Int) : Boolean{
+        //Temp movement TODO: Move using gyroscope
+        when(dir) {
+            0 -> blueCar2.UpdateSyncedData("Position",blueCar2.sprite.position + Vector3(0f, 0.1f, 0f));
+            1 -> blueCar2.UpdateSyncedData("Position",blueCar2.sprite.position + Vector3(0f, -0.1f, 0f));
+            2 -> blueCar2.UpdateSyncedData("Position",blueCar2.sprite.position + Vector3(-0.1f, 0f, 0f));
+            3 -> blueCar2.UpdateSyncedData("Position",blueCar2.sprite.position + Vector3(0.1f, 0f, 0f));
+        }
+
+        return false
+    }
 }

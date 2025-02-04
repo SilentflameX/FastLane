@@ -1,29 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <!-- OpenGL Rendering Surface -->
+
     <android.opengl.GLSurfaceView
         android:id="@+id/glSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- UI Buttons -->
     <Button
-        android:id="@+id/button1"
+        android:id="@+id/upButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Button 1"
-        android:layout_gravity="start|bottom"
-        android:layout_margin="16dp" />
+        android:text="UP"
+        android:translationX="80dp"
+        android:translationY="260dp" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/downButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Button 2"
-        android:layout_gravity="end|bottom"
-        android:layout_margin="16dp" />
+        android:text="DOWN"
+        android:translationX="80dp"
+        android:translationY="330dp" />
+
+    <Button
+        android:id="@+id/leftButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="LEFT"
+        android:translationX="30dp"
+        android:translationY="295dp" />
+
+    <Button
+        android:id="@+id/rightButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RIGHT"
+        android:translationX="130dp"
+        android:translationY="295dp" />
+
+    <!-- UI Buttons -->
 
 </FrameLayout>
