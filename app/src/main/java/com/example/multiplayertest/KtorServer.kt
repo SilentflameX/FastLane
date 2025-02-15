@@ -38,7 +38,8 @@ object KtorServer {
                 ServerLoop(_hostIP, _hostPort)
             }
         }
-        isServer = true
+        //Since we also playing we need connect to ourselves
+        KtorClient.ConnectToServer("localhost", _hostPort)
         return true
     }
 
@@ -46,7 +47,7 @@ object KtorServer {
 
     }
 
-    private suspend fun ServerLoop(_hostIP: String, _hostPort: Int){
+    private suspend fun ServerLoop(_hostIP: String, _hostPort: Int) {
         val selectorManager = SelectorManager(Dispatchers.IO)
         val serverSocket = aSocket(selectorManager).tcp().bind(_hostIP, _hostPort)
         println("Server: Server Started")
@@ -56,10 +57,16 @@ object KtorServer {
             var socket = serverSocket.accept()
             var receiveChannel = socket.openReadChannel()
             var sendChannel = socket.openWriteChannel(autoFlush = true)
-            var newClient = ClientInfo(socket, receiveChannel, sendChannel,clientsList.size)
+            var newClientID = clientsList.size
+            var newClient = ClientInfo(socket, receiveChannel, sendChannel, newClientID)
             clientsList.add(newClient)
             println("Server: Client Connected :${newClient.clientID}")
-
+            //Send confirmation Msg
+            //Send its networkID
+            var confirmationMsg = "$newClientID"
+            //Send all networkedObjects
+            confirmationMsg += KtorClient.NetworkedObjectsToPacket()
+            newClient.sendChannel.writeStringUtf8(confirmationMsg + "\n")
             thread {
                 runBlocking {
                     CheckMessages(newClient.clientID)
@@ -83,16 +90,13 @@ object KtorServer {
     }
 
 
-    private suspend fun SendData(clientID: Int,packet: String) = coroutineScope {
-        clientsList[clientID].sendChannel.writeStringUtf8(packet)
-    }
 
     fun SendPacketToClient(clientID: Int,packet: String) {
         if (!isServer) return
 
         //Maybe can create some buffer here or add all into 1 packet and send at once
         GlobalScope.async {
-            SendData(clientID, packet)
+            clientsList[clientID].sendChannel.writeStringUtf8(packet)
         }
     }
 
@@ -108,7 +112,7 @@ object KtorServer {
                 for (inetAddress in networkInterface.inetAddresses) {
                     if (!inetAddress.isLoopbackAddress && inetAddress is InetAddress) {
                         val hostAddress = inetAddress.hostAddress
-                        // Skip IPv6 addresses if you only want IPv4
+                        //Skip IPv6 addresses if you only want IPv4
                         if (hostAddress.contains(":")) continue
                         return hostAddress
                     }

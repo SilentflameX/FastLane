@@ -1,72 +1,94 @@
 package com.example.multiplayertest.GameObjects
 
-import KtorServer
+import KtorClient.networkedObjectList
 import androidx.xr.runtime.math.Vector3
+import com.example.multiplayertest.GameScene.myPlayer
 
 class NetworkedVar<T> (t : T){
     var value = t
     var dirty = false
     var type = ""
 }
-var totalNetworkedObjects = 0
+
 class NetworkedObject : GameObject() {
 
-    var networkedID = -1
+    var objNetworkID = -1
 
     init {
-        networkedID = totalNetworkedObjects++
+        objNetworkID = networkedObjectList.size
     }
 
-    val syncedData: MutableMap<String, Any> = mutableMapOf()
+    val syncedVariables: MutableMap<String, Any> = mutableMapOf()
 
-    fun <T>UpdateSyncedData(_name : String, _value : T) {
-        val variable = syncedData[_name] as NetworkedVar<T>
+    inline fun <reified T>UpdateSyncedData(_name : String, _value : T) {
+        if (!syncedVariables.containsKey(_name)){
+            AddNetworkedVariable(_name, _value)
+            (syncedVariables[_name] as NetworkedVar<T>).dirty = true
+            return
+        }
+
+        val variable = syncedVariables[_name] as NetworkedVar<T>
         variable.value = _value
         variable.dirty = true
     }
 
 
-    fun <T>UpdateFromServer(_name : String, _value : T) {
-        val variable = syncedData[_name] as NetworkedVar<T>
+    inline fun <reified T>UpdateFromServer(_name : String, _value : T) {
+        if (!syncedVariables.containsKey(_name)){
+            AddNetworkedVariable(_name, _value)
+            return
+        }
+
+        val variable = syncedVariables[_name] as NetworkedVar<T>
         variable.value = _value
     }
 
     //Loops through all variables that need to be updated and send them to server
     fun UpdateVariables() {
-        syncedData.forEach { (key, value) ->
+        syncedVariables.forEach { (key, value) ->
             if ((value as NetworkedVar<*>).dirty) {
                 SendUpdateToServer(value,key)
                 value.dirty = false
             }
+            if(key == "Position")
+                sprite.position = value.value as Vector3
+            else if(key == "Sprite" && sprite.textureId != value.value as Int)
+                sprite.LoadSprite(value.value as Int)
         }
     }
 
     //Creates the message and sends to the server
     private fun SendUpdateToServer(_variable :NetworkedVar<*>, _varName : String) {
-        var packetString = CreatePacket(_variable.type, _variable.value, _varName)
+        var packetString = "U$objNetworkID|" + CreatePacket(_variable, _varName)
         KtorClient.SendPacketToServer(packetString)
     }
 
-    private fun CreatePacket(_type : String, _value : Any?, _name : String) : String{
-        var retString = "$networkedID|"
-        when(_type){
-            "Vector3" ->  retString += "V3|$_name|" + (_value as Vector3).toString()
-            "Int" ->  retString += "I|$_name|" +  (_value as Int).toString()
-            "Float" ->  retString += "F|$_name|" +  (_value as Float).toString()
+    private fun CreatePacket(_variable :NetworkedVar<*>, _name : String) : String {
+        when (_variable.type) {
+            "Vector3" -> return "$_name|V" + ( _variable.value as Vector3).toString()
+            "Int" -> return "$_name|I" + ( _variable.value as Int).toString()
+            "Float" -> return "$_name|F" + ( _variable.value as Float).toString()
         }
-        retString += "\n"
-        return retString
+        return ""
+    }
+
+    fun ObjectToPacket() : String{
+        var packet = "$objNetworkID"
+        for(sV in syncedVariables){
+            packet += "{" + CreatePacket((sV.value as NetworkedVar<*>),sV.key)
+        }
+        return packet
     }
 
 
     inline fun <reified T>AddNetworkedVariable(_name: String, _value : T) {
         var newVar = NetworkedVar(_value)
         newVar.type = T::class.simpleName.toString()
-        syncedData[_name] = newVar
+        syncedVariables[_name] = newVar
     }
 
     fun GetNetworkedValue(_name : String) : Any?{
-        return (syncedData[_name] as NetworkedVar<*>).value
+        return (syncedVariables[_name] as NetworkedVar<*>).value
     }
 
 

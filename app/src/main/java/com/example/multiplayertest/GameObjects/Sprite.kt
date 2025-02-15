@@ -7,7 +7,7 @@ import com.example.multiplayertest.glRenderer
 
 class Sprite {
     var position = Vector3(0.0f,0.0f,0.0f)
-    var scale = Vector3(1.0f,1.0f,1.0f)
+    var scale = Vector3(1f,1f,1f)
     var rotation = 0.0f
 
     var textureId = -1
