@@ -12,6 +12,7 @@ class Sprite {
 
     var textureId = -1
     var modelMatrix  = FloatArray(16)
+    var alpha = 1f
 
     fun UpdateMatrix()
     {

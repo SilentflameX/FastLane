@@ -5,8 +5,11 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.clamp
 import com.example.multiplayertest.GameObjects.GameObject
 import com.example.multiplayertest.GameObjects.NetworkedObject
+import kotlinx.coroutines.delay
 import java.lang.Float.min
 import java.lang.Float.max
+import java.lang.Thread.sleep
+import kotlin.concurrent.thread
 import kotlin.random.Random
 
 
@@ -16,12 +19,17 @@ object GameScene {
     lateinit var myPlayer : NetworkedObject
     lateinit var floor : GameObject
 
-    private val playerMoveSpeed = 0.005f
-    var playerDirection = Vector3(0f,0f,0f)
     var playerMoveX = 0f
+    var playerMoveY = 0f
+    var playerInvulnDuration = 0f
+    var playerBraking = false
+    var playerAccelerating = false
 
     var carList = mutableListOf<GameObject>() //Used to track cars
     val randomGenerator = Random(1)
+
+    //Player stats
+    val InvulnerableDuration = 3.0f
 
     fun Start()
     {
@@ -35,8 +43,27 @@ object GameScene {
     }
 
     fun Update(deltaTime: Float) {
+        //Update pedals
+        if(playerAccelerating){
+            playerMoveY += 0.1f * deltaTime
+        }
+        else
+        {
+            var brakeForce = 0.001f
+            if(playerBraking){
+                brakeForce = 0.2f
+            }
+
+            if (playerMoveY > 0f) {
+                playerMoveY -= brakeForce * deltaTime
+            }
+            else {
+                playerMoveY = 0f
+            }
+        }
+
         //Player driving
-        MovePlayer(Vector3(playerMoveX,0.1f,0f))
+        MovePlayer(Vector3(playerMoveX, playerMoveY,0f))
 
         //Update floor
         var floorDist = myPlayer.sprite.position.y - floor.sprite.position.y
@@ -50,6 +77,7 @@ object GameScene {
             }
         }
 
+        //Update Camera to follow
         glRenderer.UpdateCamera(myPlayer.sprite.position)
     }
 
@@ -74,27 +102,49 @@ object GameScene {
         var playerNewPos = myPlayer.sprite.position + dir
 
         //Check for collision first
-        for (go in goList) {
-            if(go == myPlayer)
-                continue
+        //We skip if player is invuln
+        if(playerInvulnDuration > 0f) {
 
-            val x1 = go.sprite.position.x + go.sprite.scale.x / 2
-            val x2 = go.sprite.position.x - go.sprite.scale.x / 2
-            val y1 = go.sprite.position.y + go.sprite.scale.y / 2
-            val y2 = go.sprite.position.y - go.sprite.scale.y / 2
-            val min = Vector2(min(x1, x2), min(y1, y2))
-            val max = Vector2(max(x1, x2), max(y1, y2))
+        }
+        else{
+            for (go in goList) {
+                if (go == myPlayer)
+                    continue
 
-            val result = CircleAABB(
-                Vector2(myPlayer.sprite.position.x, myPlayer.sprite.position.y),
-                Vector2(playerNewPos.x, playerNewPos.y),
-                myPlayer.sprite.scale.x / 2,
-                min,
-                max
-            )
-            if (result.first) {
-                playerNewPos += Vector3(result.second.x, result.second.y, playerNewPos.z)
-                break
+                val x1 = go.sprite.position.x + go.sprite.scale.x / 2
+                val x2 = go.sprite.position.x - go.sprite.scale.x / 2
+                val y1 = go.sprite.position.y + go.sprite.scale.y / 2
+                val y2 = go.sprite.position.y - go.sprite.scale.y / 2
+                val min = Vector2(min(x1, x2), min(y1, y2))
+                val max = Vector2(max(x1, x2), max(y1, y2))
+
+                val result = CircleAABB(
+                    Vector2(myPlayer.sprite.position.x, myPlayer.sprite.position.y),
+                    Vector2(playerNewPos.x, playerNewPos.y),
+                    myPlayer.sprite.scale.x / 2,
+                    min,
+                    max
+                )
+                //If there is collision
+                if (result.first) {
+                    //We move player back
+                    //playerNewPos += Vector3(result.second.x, result.second.y, playerNewPos.z)
+                    //We make player blinking and invulnerable
+                    playerInvulnDuration = InvulnerableDuration
+                    thread {
+                        while (playerInvulnDuration > 0f) {
+                            if (myPlayer.sprite.alpha == 0.2f)
+                                myPlayer.sprite.alpha = 1f
+                            else
+                                myPlayer.sprite.alpha = 0.2f
+                            sleep(200)
+                            playerInvulnDuration -= 0.2f
+                        }
+                        myPlayer.sprite.alpha = 1f
+                        playerInvulnDuration = 0f
+                    }
+                    break
+                }
             }
         }
 
@@ -104,6 +154,14 @@ object GameScene {
         //Update player position
         myPlayer.UpdateSyncedData("Position", playerNewPos)
         return
+    }
+
+    fun PlayerBrake(pressed : Boolean){
+        playerBraking = pressed
+    }
+
+    fun PlayerAccelerate(pressed : Boolean){
+        playerAccelerating = pressed
     }
 
 
@@ -158,13 +216,6 @@ object GameScene {
         CreateCar(RandomCarPosition() + Vector3(0f,15f,0f),Vector3(1.2f,2.5f,1f))
         CreateCar(RandomCarPosition() + Vector3(0f,20f,0f),Vector3(1.2f,2.5f,1f))
         CreateCar(RandomCarPosition() + Vector3(0f,20f,0f),Vector3(1.2f,2.5f,1f))
-
-        //CreateCar(Vector3(2.85f,22.5f,0f),Vector3(1.2f,2.5f,1f))
-        //CreateCar(Vector3(5.7f,22.5f,0f),Vector3(1.2f,2.5f,1f))
-        //CreateCar(Vector3(8.55f,10.5f,0f),Vector3(1.2f,2.5f,1f))
-        //CreateCar(Vector3(-2.85f,25.5f,0f),Vector3(1.2f,2.5f,1f))
-        //CreateCar(Vector3(-5.7f,25.5f,0f),Vector3(1.2f,2.5f,1f))
-        //CreateCar(Vector3(-8.55f,15.5f,0f),Vector3(1.2f,2.5f,1f))
     }
 
     private fun CreateCar(position :Vector3, scale :Vector3){

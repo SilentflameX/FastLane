@@ -81,9 +81,11 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
     uniform sampler2D uTexture; //Texture sampler
     varying vec2 outTexCoord;   //Interpolated texture coordinates
+    uniform float u_Alpha;  // Custom alpha value (0.0 = fully transparent, 1.0 = opaque)
 
     void main() {
-        gl_FragColor = texture2D(uTexture, outTexCoord); //Sample texture and set pixel color
+        vec4 texColor = texture2D(uTexture, outTexCoord); //Sample texture and set pixel color
+        gl_FragColor = vec4(texColor.rgb, texColor.a * u_Alpha);  // Multiply texture alpha
     }
 """.trimIndent()
 
@@ -162,6 +164,9 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
             GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0)
 
+            //Update alpha
+            val alphaLocation = GLES20.glGetUniformLocation(shaderProgram, "u_Alpha")
+            GLES20.glUniform1f(alphaLocation, go.sprite.alpha)
             //Draw the object
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.size, GLES20.GL_UNSIGNED_SHORT, drawListBuffer)
         }
@@ -181,6 +186,9 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
              Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
             GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0)
 
+            //Update alpha
+            val alphaLocation = GLES20.glGetUniformLocation(shaderProgram, "u_Alpha")
+            GLES20.glUniform1f(alphaLocation, go.sprite.alpha)
             //Draw the object
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.size, GLES20.GL_UNSIGNED_SHORT, drawListBuffer)
         }

@@ -3,9 +3,8 @@ package com.example.multiplayertest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import MyGLRenderer
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -13,10 +12,11 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.opengl.GLSurfaceView
 import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.Toast
-import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.math.clamp
 
 
 lateinit var glSurfaceView: GLSurfaceView
@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var gyroscope: Sensor? = null
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -47,24 +48,22 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
 
         //Set up button interactions
-        val upButton: Button = findViewById(R.id.upButton)
-        upButton.setOnClickListener {
-            //GameScene.MovePlayer(Vector3(0f, 1f, 0f) * moveSpeed)
+        val leftButton: ImageButton = findViewById(R.id.brake)
+        leftButton.setOnTouchListener { v, event ->
+            when (event?.action) {
+                MotionEvent.ACTION_DOWN -> {GameScene.PlayerBrake(true)}
+                MotionEvent.ACTION_UP -> {GameScene.PlayerBrake(false)}
+            }
+            v?.onTouchEvent(event) ?: true
         }
 
-        val downButton: Button = findViewById(R.id.downButton)
-        downButton.setOnClickListener {
-            //GameScene.MovePlayer(Vector3(0f, -1f, 0f) * moveSpeed)
-        }
-
-        val leftButton: Button = findViewById(R.id.leftButton)
-        leftButton.setOnClickListener {
-            //GameScene.MovePlayer(Vector3(-1f, 0f, 0f) * moveSpeed)
-        }
-
-        val rightButton: Button = findViewById(R.id.rightButton)
-        rightButton.setOnClickListener {
-            //GameScene.MovePlayer(Vector3(1f, 0f, 0f) * moveSpeed)
+        val rightButton: ImageButton = findViewById(R.id.accelerate)
+        rightButton.setOnTouchListener { v, event ->
+            when (event?.action) {
+                MotionEvent.ACTION_DOWN -> {GameScene.PlayerAccelerate(true)}
+                MotionEvent.ACTION_UP -> {GameScene.PlayerAccelerate(false)}
+            }
+            v?.onTouchEvent(event) ?: true
         }
     }
 

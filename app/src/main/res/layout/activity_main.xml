@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -12,37 +13,40 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <Button
-        android:id="@+id/upButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="UP"
-        android:translationX="80dp"
-        android:translationY="260dp" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/frameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/downButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="DOWN"
-        android:translationX="80dp"
-        android:translationY="330dp" />
+        <ImageButton
+            android:id="@+id/accelerate"
+            android:layout_width="133dp"
+            android:layout_height="183dp"
+            android:layout_marginTop="209dp"
+            android:layout_marginEnd="72dp"
+            android:layout_marginBottom="55dp"
+            android:backgroundTint="#00FFFFFF"
+            android:contentDescription="AcceleratePedal"
+            android:src="@drawable/block_large"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/leftButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="LEFT"
-        android:translationX="30dp"
-        android:translationY="295dp" />
+        <ImageButton
+            android:id="@+id/brake"
+            android:layout_width="133dp"
+            android:layout_height="183dp"
+            android:layout_marginStart="72dp"
+            android:layout_marginTop="209dp"
+            android:layout_marginBottom="55dp"
+            android:backgroundTint="#00FFFFFF"
+            android:contentDescription="BreakPedal"
+            android:src="@drawable/block_narrow_horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/rightButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="RIGHT"
-        android:translationX="130dp"
-        android:translationY="295dp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- UI Buttons -->
 
