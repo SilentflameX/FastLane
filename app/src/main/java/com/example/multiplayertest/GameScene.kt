@@ -55,6 +55,13 @@ object GameScene {
         floor = null
         healthIconList.clear()
         carList.clear()
+
+        playerMoveX = 0f
+        playerMoveY = 0f
+        playerInvulnDuration = 0f
+        playerBraking = false
+        playerAccelerating = false
+        playerScore = 0
         playerLifes = 3
     }
 

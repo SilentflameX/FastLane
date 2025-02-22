@@ -145,6 +145,8 @@ class MainMenu : ComponentActivity() {
 
     fun UpdateLobby(){
         runOnUiThread {
+            if(findViewById<ConstraintLayout>(R.id.Player1) == null)
+                return@runOnUiThread
             if (KtorClient.totalClientCount >= 1) {
                 (findViewById<ConstraintLayout>(R.id.Player1)!!).visibility = VISIBLE
             }
