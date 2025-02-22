@@ -1,9 +1,14 @@
 
+import android.view.View.VISIBLE
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.GameObjects.NetworkedObject
 import com.example.multiplayertest.GameObjects.NetworkedVar
+import com.example.multiplayertest.GameScene
 import com.example.multiplayertest.GameScene.goList
 import com.example.multiplayertest.GameScene.myPlayer
+import com.example.multiplayertest.MainMenu
+import com.example.multiplayertest.R
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.network.selector.SelectorManager
@@ -20,7 +25,7 @@ import kotlin.concurrent.thread
 import kotlin.time.TimeSource
 
 object KtorClient {
-    private var hostIP = ""
+    var hostIP = ""
     private var port = 0
 
     lateinit var socket: Socket
@@ -31,8 +36,10 @@ object KtorClient {
 
     val networkedObjectList: MutableMap<Int, NetworkedObject> = mutableMapOf()
 
-    var delayBuffer = 500//in milliseconds
+    var delayBuffer = 100//in milliseconds
     var prevMsgTime : TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+
+    var totalClientCount = -1
 
 
     fun IsConnected() : Boolean{
@@ -64,7 +71,7 @@ object KtorClient {
         else
         {
             //get our networkID
-            networkID = initData.first().toInt()
+            networkID = initData.first().digitToInt()
             initData = initData.drop(2)
 
             //If got networkedObjects to sync
@@ -79,49 +86,58 @@ object KtorClient {
 
                     //Get all syncedVariables
                     val v = obj.drop(2)
-                    for (value in v.split("{")) {
-                        val split = value.split("|")
-                        newNetworkedObj.syncedVariables.put(split[0], NetworkedVar(StringToVar(split[1])))
+                    if(v.length != 0) {
+                        for (value in v.split("{")) {
+                            val split = value.split("|")
+                            newNetworkedObj.syncedVariables.put(split[0],NetworkedVar(StringToVar(split[1])))
+                        }
                     }
                     goList.add(newNetworkedObj)
                     networkedObjectList.put(objNetworkID, newNetworkedObj)
                 }
             }
         }
-
-        println("Client Connected")
         //Spawn our player
         myPlayer = SpawnNetworkedObject()
 
         //Client receive loop
-        while (true) {
+        while (networkID != -1) {
             var stream = receiveChannel.readUTF8Line()
             if(stream != null)
             {
                 //split msg up if got multiple msgs
                 var messages = stream.split("\n")
                 for(msg in messages) {
-                    println("Client: Message recieved")
                     //parse message type
                     val type = msg.first()
                     var data = msg.drop(1)
                     when (type) {
                         'U' -> UpdateNetworkedValue(data) //Value update
                         'S' -> ServerSpawnNetworkedObject(data)
+                        'J' -> NewClientJoined(data) //New client joined
+                        'G' -> StartGame(data) //Start game
                     }
                 }
             }
         }
     }
 
-    fun CloseServer(){
+    private fun StartGame(data: String) {
+        MainMenu.GetInstance().StartGame()
+    }
+
+    fun Disconnect(){
+        networkID = -1
         socket.close()
+        //Reset everything
+        GameScene.Reset()
+
+        networkedObjectList.clear()
     }
 
     fun Update(deltaTime: Float){
         for (obj in networkedObjectList){
             obj.value.UpdateVariables()
-            //quite dirty but do here temp
         }
     }
 
@@ -167,10 +183,12 @@ object KtorClient {
     }
 
     fun ServerSpawnNetworkedObject(data: String) {
-        if (networkedObjectList.get(data.toInt()) == null) {
+        var NetObjID = data.toInt()
+        //We only spawn if its not already spawned
+        if (networkedObjectList.get(NetObjID) == null) {
             var newNetworkedObj = NetworkedObject()
             goList.add(newNetworkedObj)
-            networkedObjectList.put(data.toInt(), newNetworkedObj)
+            networkedObjectList.put(NetObjID, newNetworkedObj)
         }
     }
 
@@ -199,8 +217,9 @@ object KtorClient {
         }
     }
 
-    fun RegisterNetworkedObject(newObject : NetworkedObject) {
-        networkedObjectList.put(newObject.objNetworkID, newObject)
+    fun NewClientJoined(packet: String){
+        totalClientCount = packet.toInt()
+        MainMenu.GetInstance().UpdateLobby()
     }
 
 }

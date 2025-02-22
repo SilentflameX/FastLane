@@ -54,6 +54,8 @@ class NetworkedObject : GameObject() {
                 sprite.position = value.value as Vector3
             else if(key == "Sprite" && sprite.textureId != value.value as Int)
                 sprite.LoadSprite(value.value as Int)
+            else if(key == "Scale")
+                sprite.scale = value.value as Vector3
         }
     }
 

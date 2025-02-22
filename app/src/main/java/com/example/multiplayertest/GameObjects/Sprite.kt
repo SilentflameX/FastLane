@@ -1,9 +1,12 @@
 package com.example.multiplayertest.GameObjects
 import MyGLRenderer
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.opengl.GLES20
+import android.opengl.GLUtils
 import android.opengl.Matrix
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.MainActivity
-import com.example.multiplayertest.glRenderer
 
 class Sprite {
     var position = Vector3(0.0f,0.0f,0.0f)
@@ -24,8 +27,34 @@ class Sprite {
 
     fun LoadSprite(resourceId: Int)
     {
-        textureId = glRenderer.loadTexture(resourceId)
+        textureId = loadTexture(resourceId)
     }
 
+    fun loadTexture(resourceId: Int): Int {
+        val textureHandle = IntArray(1)
+
+        //Generate a texture object
+        GLES20.glGenTextures(1, textureHandle, 0)
+        if (textureHandle[0] == 0) {
+            throw RuntimeException("Error generating texture handle")
+        }
+
+        //Load the bitmap from resources
+        val bitmap: Bitmap =
+            BitmapFactory.decodeResource(MainActivity.applicationContext().resources, resourceId)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0])
+
+        //Set texture parameters
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
+
+        //Load the bitmap into the bound texture
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+
+        //Recycle the bitmap, since its data is now on the GPU
+        bitmap.recycle()
+
+        return textureHandle[0]
+    }
 
 }

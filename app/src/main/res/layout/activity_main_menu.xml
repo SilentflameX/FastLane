@@ -7,62 +7,149 @@
     android:layout_height="match_parent"
     tools:context=".MainMenu">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/textInputLayout"
-        android:layout_width="260dp"
-        android:layout_height="72dp"
-        android:layout_marginTop="120dp"
-        android:layout_marginEnd="140dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/BackgroundLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/ipAddress"
-            android:layout_width="match_parent"
+        <VideoView
+            android:id="@+id/backgroundAnim"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitXY"
+            android:src="@drawable/background"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"  />
+
+        <ImageView
+            android:id="@+id/toDeleteView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitXY"
+            android:src="@drawable/background"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/ConnectLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible"
+        tools:layout_editor_absoluteX="514dp"
+        tools:layout_editor_absoluteY="176dp">
+
+        <Button
+            android:id="@+id/ConnectButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="host IP"
-            android:text="@string/defaultIP" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="3dp"
+            android:text="Join"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textInputLayout" />
 
-    <Button
-        android:id="@+id/hostButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="260dp"
-        android:layout_marginTop="29dp"
-        android:layout_marginEnd="32dp"
-        android:text="HOST"
-        app:layout_constraintEnd_toStartOf="@+id/joinButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textInputLayout" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayout"
+            android:layout_width="260dp"
+            android:layout_height="65dp"
+            android:layout_marginTop="198dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-    <Button
-        android:id="@+id/joinButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="29dp"
-        android:layout_marginEnd="238dp"
-        android:text="JOIN"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ipAddress"
+                android:layout_width="286dp"
+                android:layout_height="50dp"
+                android:hint="host IP"
+                android:text="@string/defaultIP"
+                android:textSize="24sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/MultiplayerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/hostButton"
-        app:layout_constraintTop_toBottomOf="@+id/textInputLayout" />
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/textInputLayout2"
-        android:layout_width="166dp"
-        android:layout_height="71dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="120dp"
-        app:layout_constraintStart_toEndOf="@+id/textInputLayout"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/port"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="port"
-            android:text="8080" />
-    </com.google.android.material.textfield.TextInputLayout>
+        <Button
+            android:id="@+id/JoinButton"
+            android:layout_width="140dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="141dp"
+            android:layout_marginTop="252dp"
+            android:layout_marginBottom="99dp"
+            android:text="Join"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/HostButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/HostButton"
+            android:layout_width="140dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="236dp"
+            android:layout_marginTop="252dp"
+            android:layout_marginBottom="99dp"
+            android:text="Host"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/MainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/SingleplayerButton"
+            android:layout_width="140dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="48dp"
+            android:text="Singleplayer"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/MultiplayerButton"
+            android:layout_width="140dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="32dp"
+            android:text="Multiplayer"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/SingleplayerButton" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

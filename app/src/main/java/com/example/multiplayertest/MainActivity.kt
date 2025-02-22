@@ -1,11 +1,14 @@
 package com.example.multiplayertest
 
+import KtorClient
+import KtorServer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import MyGLRenderer
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -13,19 +16,33 @@ import android.hardware.SensorManager
 import android.opengl.GLSurfaceView
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.View
-import android.widget.Button
+import android.view.View.VISIBLE
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
-
-
-lateinit var glSurfaceView: GLSurfaceView
-lateinit var glRenderer: MyGLRenderer
-
+import androidx.constraintlayout.widget.ConstraintLayout
+import com.example.multiplayertest.GameScene.playerScore
 
 class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var gyroscope: Sensor? = null
+    lateinit var glRenderer: MyGLRenderer
+
+    init {
+        instance = this
+    }
+
+    companion object {
+        private var instance: MainActivity? = null
+
+        fun applicationContext() : Context {
+            return instance!!.applicationContext
+        }
+
+        fun GetInstance() : MainActivity{
+            return  instance!!
+        }
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,11 +51,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         setContentView(R.layout.activity_main)
 
         //Initialize the GLSurfaceView
-        glSurfaceView = findViewById(R.id.glSurfaceView)
+        var glSurfaceView: GLSurfaceView = findViewById(R.id.glSurfaceView)
         glSurfaceView.setEGLContextClientVersion(2) //Use OpenGL ES 2.0
         glRenderer = MyGLRenderer(this)
         glSurfaceView.setRenderer(glRenderer)
         glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+
+        val context: Context = MainActivity.applicationContext()
 
         //Set up Gyroscope
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -46,6 +65,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         if (gyroscope == null) {
             Toast.makeText(this, "Gyroscope not available!", Toast.LENGTH_SHORT).show()
         }
+
+
+        GameScene.healthIconList.add(findViewById(R.id.heart1))
+        GameScene.healthIconList.add(findViewById(R.id.heart2))
+        GameScene.healthIconList.add(findViewById(R.id.heart3))
 
         //Set up button interactions
         val leftButton: ImageButton = findViewById(R.id.brake)
@@ -68,6 +92,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (event?.getAction() != KeyEvent.ACTION_DOWN) {
+            return super.onKeyDown(keyCode, event)
+        }
         return when (keyCode) {
             KeyEvent.KEYCODE_A -> {
                 GameScene.PLayerInput(-2f)
@@ -77,13 +104,20 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 GameScene.PLayerInput(2f)
                 true
             }
+            KeyEvent.KEYCODE_W -> {
+                GameScene.PlayerBrake(false)
+                GameScene.PlayerAccelerate(true)
+                true
+            }
             KeyEvent.KEYCODE_S -> {
-                GameScene.PLayerInput(0f)
+                GameScene.PlayerAccelerate(false)
+                GameScene.PlayerBrake(true)
                 true
             }
             else -> super.onKeyDown(keyCode, event)
         }
     }
+
 
     override fun onResume() {
         super.onResume()
@@ -98,7 +132,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-        return
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             var deltaX = event.values[0] //Rotation around X-axis (pitch)
             var deltaY = event.values[1] //Rotation around Y-axis (roll)
@@ -113,6 +146,30 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         //Not needed for basic movement
     }
 
+    fun GameOver() {
+        runOnUiThread {
+            findViewById<ConstraintLayout>(R.id.GameOverScreen).visibility = VISIBLE
+            findViewById<TextView>(R.id.FinalScore).text = "%05d".format(playerScore)
+            findViewById<ImageButton>(R.id.HomeButton).setOnClickListener {
+                //Go back to main activity
+                val intent = Intent(this@MainActivity, MainMenu::class.java)
+                startActivity(intent)
+
+                //Disconnect
+                KtorClient.Disconnect()
+                //If server we shut down server
+                if (KtorServer.isServer)
+                    KtorServer.ShutdownServer()
+
+            }
+        }
+    }
+
+    fun UpdateScoreText(){
+        runOnUiThread {
+            findViewById<TextView>(R.id.score).text = "%05d".format(playerScore)
+        }
+    }
 }
 
 

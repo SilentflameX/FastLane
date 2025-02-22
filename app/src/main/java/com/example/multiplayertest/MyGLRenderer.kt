@@ -16,10 +16,21 @@ import android.opengl.Matrix
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.GameScene
 import com.example.multiplayertest.GameScene.myPlayer
+import com.example.multiplayertest.MainActivity
 
 class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
-    private var context = _context
+    init {
+        instance = this
+    }
+
+    companion object {
+        private var instance: MyGLRenderer? = null
+
+        fun glRenderer() : MyGLRenderer {
+            return instance!!
+        }
+    }
 
     private val vertexCoords = floatArrayOf(
         -0.5f, 0.5f, 0.0f,  //Top-left
@@ -102,7 +113,8 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
         //Compile shaders and link program
         shaderProgram = createProgram(vertexShaderCode, fragmentShaderCode)
-        GameScene.Start()
+
+
     }
 
 
@@ -120,6 +132,9 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
             0f, 0f, 0f,  //Look-at point
             0f, 1f, 0f   //Up vector
         )
+
+
+        GameScene.Start()
     }
 
     fun UpdateCamera(position: Vector3) {
@@ -256,31 +271,6 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
     }
 
 
-    fun loadTexture(resourceId: Int): Int {
-        val textureHandle = IntArray(1)
 
-        //Generate a texture object
-        GLES20.glGenTextures(1, textureHandle, 0)
-        if (textureHandle[0] == 0) {
-            throw RuntimeException("Error generating texture handle")
-        }
-
-        //Load the bitmap from resources
-        val bitmap: Bitmap =
-            BitmapFactory.decodeResource(context.resources, resourceId)
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0])
-
-        //Set texture parameters
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
-
-        //Load the bitmap into the bound texture
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
-
-        //Recycle the bitmap, since its data is now on the GPU
-        bitmap.recycle()
-
-        return textureHandle[0]
-    }
 
 }
