@@ -7,6 +7,7 @@ import com.example.multiplayertest.GameObjects.NetworkedVar
 import com.example.multiplayertest.GameScene
 import com.example.multiplayertest.GameScene.goList
 import com.example.multiplayertest.GameScene.myPlayer
+import com.example.multiplayertest.GameScene.randomGenerator
 import com.example.multiplayertest.MainMenu
 import com.example.multiplayertest.R
 import io.ktor.client.*
@@ -23,6 +24,7 @@ import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.*
 import java.net.ConnectException
 import kotlin.concurrent.thread
+import kotlin.random.Random
 import kotlin.time.TimeSource
 
 object KtorClient {
@@ -134,6 +136,7 @@ object KtorClient {
     }
 
     private fun StartGame(data: String) {
+        randomGenerator = Random(data.toInt())
         MainMenu.GetInstance().StartGame()
     }
 

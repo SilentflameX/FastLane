@@ -39,7 +39,7 @@ object GameScene {
     var playerScore = 0
 
     var carList = mutableListOf<GameObject>() //Used to track cars
-    val randomGenerator = Random(1)
+    var randomGenerator = Random(1)
     val carSpriteList = listOf(R.drawable.car_black_4, R.drawable.car_blue_4, R.drawable.car_green_4, R.drawable.car_red_4, R.drawable.car_yellow_4)
 
 
@@ -70,6 +70,7 @@ object GameScene {
 
     fun Start() {
         while (myPlayer == null) {}//wait
+
 
         LoadLevel1()
         //Load all car sprites

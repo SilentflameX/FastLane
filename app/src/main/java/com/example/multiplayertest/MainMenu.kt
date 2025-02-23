@@ -20,6 +20,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.multiplayertest.GameObjects.NetworkedVar
 import com.example.multiplayertest.GameScene.myPlayer
 import com.google.android.material.textfield.TextInputEditText
+import kotlin.random.Random
 
 class MainMenu : ComponentActivity() {
     init {
@@ -150,7 +151,7 @@ class MainMenu : ComponentActivity() {
             startButton.setOnClickListener {
                 //Opens Waiting for players screen
                 //Message all to start
-                KtorServer.SendStartGameMessage()
+                KtorServer.SendStartGameMessage(Random.nextInt())
             }
             //If not server we disable the start button
             if (!KtorServer.isServer)

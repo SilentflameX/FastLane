@@ -112,11 +112,12 @@ object KtorServer {
         }
     }
 
-    fun SendStartGameMessage() {
+    fun SendStartGameMessage(seed: Int) {
+        println("Seed: $seed")
         GlobalScope.async {
             for (client in clientsList) {
                 writeMutex.withLock {
-                    client.sendChannel.writeStringUtf8("G\n")
+                    client.sendChannel.writeStringUtf8("G$seed\n")
                 }
             }
         }
