@@ -170,6 +170,23 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             findViewById<TextView>(R.id.score).text = "%05d".format(playerScore)
         }
     }
+
+    @SuppressLint("MissingSuperCall")
+    override fun onBackPressed() {
+        runOnUiThread {
+            val intent = Intent(this@MainActivity, MainMenu::class.java)
+            startActivity(intent)
+
+            // Disconnect from networking
+            KtorClient.Disconnect()
+            if (KtorServer.isServer) {
+                KtorServer.ShutdownServer()
+            }
+
+            // Reset game scene to ensure a fresh start
+            GameScene.Reset()
+        }
+    }
 }
 
 
