@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlin.concurrent.thread
+import android.widget.Toast
 
 class MainMenu : ComponentActivity() {
     init {
@@ -108,10 +109,22 @@ class MainMenu : ComponentActivity() {
         val connectButton: Button = findViewById(R.id.ConnectButton)
         connectButton.setOnClickListener {
             val ipText: TextInputEditText = findViewById(R.id.ipAddress)
-            var clientConnected = KtorClient.ConnectToServer(ipText.text.toString(), 8080)
+            val ipAddress = ipText.text.toString().trim()
+
+            if (!isValidIPAddress(ipAddress)) {
+                runOnUiThread {
+                    Toast.makeText(this, "Invalid IP Address! Please enter a valid IP.", Toast.LENGTH_LONG).show()
+                }
+                return@setOnClickListener  // Prevents connection attempt
+            }
+
+            val clientConnected = KtorClient.ConnectToServer(ipAddress, 8080)
             if (clientConnected) {
-                //Open lobby layout
                 LoadLobby()
+            } else {
+                runOnUiThread {
+                    Toast.makeText(this, "Failed to connect. Check IP or server availability.", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -162,4 +175,11 @@ class MainMenu : ComponentActivity() {
         }
     }
 
+    fun isValidIPAddress(ip: String): Boolean {
+        val ipPattern =
+            Regex("^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$")
+
+        // Reject "0.0.0.0" explicitly
+        return ipPattern.matches(ip) && ip != "0.0.0.0"
+    }
 }
