@@ -20,6 +20,7 @@ import android.view.View.VISIBLE
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.multiplayertest.GameScene.playerScore
 
@@ -49,6 +50,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        //Disable back button
+        val callback = onBackPressedDispatcher.addCallback(this) {
+            // Handle the back button event
+        }
 
         //Initialize the GLSurfaceView
         var glSurfaceView: GLSurfaceView = findViewById(R.id.glSurfaceView)

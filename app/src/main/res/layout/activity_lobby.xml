@@ -8,11 +8,23 @@
 
     <!-- OpenGL Rendering Surface -->
 
+    <Button
+        android:id="@+id/backButton_Lobby"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/back_button"
+        android:text=""
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.25"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.050" />
+
     <TextView
         android:id="@+id/HostIP"
         android:layout_width="327dp"
         android:layout_height="36dp"
-        android:layout_marginTop="16dp"
         android:autoSizeMaxTextSize="80dp"
         android:autoSizeTextType="uniform"
         android:background="#586D6A6A"
@@ -20,9 +32,11 @@
         android:text="hostIP"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.060" />
 
     <Button
         android:id="@+id/StartButton"
@@ -47,11 +61,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.25">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/Player1Profile"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:src="@drawable/car_blue_1" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/car_black_1"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -66,11 +85,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.25">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/Player2Profile"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:src="@drawable/car_blue_1" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/car_black_1"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -85,11 +109,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.6">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/Player3Profile"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:src="@drawable/car_blue_1" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/car_black_1"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -104,11 +133,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.6">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/Player4Profile"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:src="@drawable/car_blue_1" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/car_black_1"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- UI Buttons -->

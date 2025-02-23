@@ -8,6 +8,7 @@ import android.opengl.Matrix
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.MainActivity
 
+
 class Sprite {
     var position = Vector3(0.0f,0.0f,0.0f)
     var scale = Vector3(1f,1f,1f)
@@ -27,10 +28,16 @@ class Sprite {
 
     fun LoadSprite(resourceId: Int)
     {
-        textureId = loadTexture(resourceId)
+        if(MyGLRenderer.glRenderer().loadedSpriteMap.get(resourceId) == null){
+            textureId = loadTexture(resourceId)
+            MyGLRenderer.glRenderer().loadedSpriteMap[resourceId] = textureId
+        }
+        else {
+            textureId = MyGLRenderer.glRenderer().loadedSpriteMap.get(resourceId)!!
+        }
     }
 
-    fun loadTexture(resourceId: Int): Int {
+    private fun loadTexture(resourceId: Int): Int {
         val textureHandle = IntArray(1)
 
         //Generate a texture object

@@ -20,6 +20,9 @@ import com.example.multiplayertest.MainActivity
 
 class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
+
+    var loadedSpriteMap = mutableMapOf<Int,Int>()
+
     init {
         instance = this
     }

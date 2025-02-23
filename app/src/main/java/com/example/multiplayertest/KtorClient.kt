@@ -21,6 +21,7 @@ import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.readUTF8Line
 import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.*
+import java.net.ConnectException
 import kotlin.concurrent.thread
 import kotlin.time.TimeSource
 
@@ -41,6 +42,8 @@ object KtorClient {
 
     var totalClientCount = -1
 
+    val profileSpriteList = listOf(R.drawable.car_black_1, R.drawable.car_blue_1, R.drawable.car_green_1, R.drawable.car_red_1, R.drawable.car_yellow_1)
+
 
     fun IsConnected() : Boolean{
         return networkID != -1
@@ -53,10 +56,14 @@ object KtorClient {
         port = _port
         thread {
             runBlocking {
-                ClientLoop(_hostIp, _port)
+                try {
+                    ClientLoop(_hostIp, _port)
+                }
+                catch (_: ConnectException){
+                }
             }
         }
-        return true
+        return false
     }
 
     suspend fun ClientLoop(_hostIp: String, _port: Int){
@@ -99,11 +106,15 @@ object KtorClient {
         }
         //Spawn our player
         myPlayer = SpawnNetworkedObject()
+        //Lane positions = -8.55, -5.78, -2.85, 0, 2.85, 5.78, 8.55
+        myPlayer!!.sprite.position = Vector3(-2.85f + (2.85f * networkID), 0f, 0f)
+        myPlayer!!.UpdateSyncedData("Position", myPlayer!!.sprite.position)
+        Update(0f)
 
         //Client receive loop
         while (networkID != -1) {
             var stream = receiveChannel.readUTF8Line()
-            if(stream != null)
+            if(!stream.isNullOrEmpty())
             {
                 //split msg up if got multiple msgs
                 var messages = stream.split("\n")
@@ -133,6 +144,7 @@ object KtorClient {
         GameScene.Reset()
 
         networkedObjectList.clear()
+        totalClientCount = -1
     }
 
     fun Update(deltaTime: Float){

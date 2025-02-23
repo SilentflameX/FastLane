@@ -1,12 +1,15 @@
 //import io.ktor.application.*
+import com.example.multiplayertest.MainMenu
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.ServerSocket
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
+import io.ktor.network.sockets.isClosed
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.availableForWrite
 import io.ktor.utils.io.readUTF8Line
 import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +20,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
 import kotlin.concurrent.thread
@@ -26,6 +32,7 @@ object KtorServer {
     var serverSocket : ServerSocket? = null
     var selectorManager : SelectorManager? = null
     private var serverJob: Job? = null
+    private val writeMutex = Mutex()
 
     class ClientInfo(_socket : Socket,  _rChannel : ByteReadChannel, _sChannel : ByteWriteChannel, _cID : Int){
         var socket = _socket
@@ -46,7 +53,7 @@ object KtorServer {
         }
         //Since we also playing we need connect to ourselves
         KtorClient.ConnectToServer("localhost", _hostPort)
-        return true
+        return false
     }
 
     fun Update(deltaTime: Float){
@@ -56,6 +63,7 @@ object KtorServer {
     private suspend fun ServerLoop(_hostIP: String, _hostPort: Int) {
         selectorManager = SelectorManager(Dispatchers.IO)
         serverSocket = aSocket(selectorManager!!).tcp().bind(_hostIP, _hostPort)
+
         while (isServer) {
             var socket = serverSocket!!.accept()
             var receiveChannel = socket.openReadChannel()
@@ -68,7 +76,9 @@ object KtorServer {
             var confirmationMsg = "$newClientID"
             //Send all networkedObjects
             confirmationMsg += KtorClient.NetworkedObjectsToPacket()
-            newClient.sendChannel.writeStringUtf8(confirmationMsg + "\n")
+            writeMutex.withLock {
+                newClient.sendChannel.writeStringUtf8(confirmationMsg + "\n")
+            }
             thread {
                 runBlocking {
                     CheckMessages(newClient.clientID)
@@ -76,39 +86,41 @@ object KtorServer {
             }
             //Update all Clients that someone joined
             for (client in clientsList) {
-                client.sendChannel.writeStringUtf8("J" + clientsList.count() + "\n")
+                writeMutex.withLock {
+                    client.sendChannel.writeStringUtf8("J" + clientsList.count() + "\n")
+                }
             }
         }
     }
 
-    private suspend fun CheckMessages(clientID: Int) = coroutineScope{
-        while (isServer) {
-            val data = clientsList[clientID].receiveChannel.readUTF8Line()
-            if(data != null) {
+    private suspend fun CheckMessages(clientID: Int) = coroutineScope {
+        try {
+            while (isServer) {
+                val data = clientsList[clientID].receiveChannel.readUTF8Line() ?: break
                 //Read and then send to all connected
-                for (client in clientsList)
-                    client.sendChannel.writeStringUtf8(data + "\n")
+                for (client in clientsList) {
+                    writeMutex.withLock {
+                        client.sendChannel.writeStringUtf8(data + "\n")
+                    }
+                }
             }
+
+        } catch (e: IOException) {
+            println("Client disconnected unexpectedly: ${e.message}")
+            clientsList[clientID].socket.close()  // Ensure client socket is closed
+            clientsList.removeAt(clientID)
         }
     }
 
     fun SendStartGameMessage() {
         GlobalScope.async {
             for (client in clientsList) {
-                client.sendChannel.writeStringUtf8("G\n")
+                writeMutex.withLock {
+                    client.sendChannel.writeStringUtf8("G\n")
+                }
             }
         }
     }
-
-    fun SendPacketToClient(clientID: Int,packet: String) {
-        if (!isServer) return
-
-        //Maybe can create some buffer here or add all into 1 packet and send at once
-        GlobalScope.async {
-            clientsList[clientID].sendChannel.writeStringUtf8(packet)
-        }
-    }
-
 
     fun ShutdownServer() {
         isServer = false

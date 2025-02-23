@@ -4,32 +4,22 @@ import KtorClient
 import KtorServer
 import android.content.Context
 import android.content.Intent
-import android.graphics.Paint.Join
 import android.os.Bundle
 import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
-import android.view.Window
-import android.view.WindowManager
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.multiplayertest.GameObjects.NetworkedVar
 import com.example.multiplayertest.GameScene.myPlayer
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
-import kotlin.concurrent.thread
 
 class MainMenu : ComponentActivity() {
     init {
@@ -49,6 +39,8 @@ class MainMenu : ComponentActivity() {
 
     }
 
+    var selectedProfileID = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -62,6 +54,15 @@ class MainMenu : ComponentActivity() {
                         or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 )
         enableEdgeToEdge()
+        LoadMainButtons()
+    }
+
+    fun LoadMainButtons(){
+
+        //Disable back button
+        val callback = onBackPressedDispatcher.addCallback(this) {
+            // Handle the back button event
+        }
 
         setContentView(R.layout.activity_main_menu)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -73,10 +74,8 @@ class MainMenu : ComponentActivity() {
         //Host server and connect ourselves
         val SinglePlayer: Button = findViewById(R.id.SingleplayerButton)
         SinglePlayer.setOnClickListener {
-            var serverStarted = KtorServer.StartServer("0.0.0.0", 8080)
-            if (serverStarted) {
-                StartGame()
-            }
+            KtorServer.StartServer("0.0.0.0", 8080)
+            StartGame()
         }
 
         //Show multiplayerlayout and hide mainlayout
@@ -97,69 +96,155 @@ class MainMenu : ComponentActivity() {
         val hostButton: Button = findViewById(R.id.HostButton)
         hostButton.setOnClickListener {
             //We start server
-            var serverStarted = KtorServer.StartServer("0.0.0.0", 8080)
-            if (serverStarted) {
-                //Opens Waiting for players screen
-                LoadLobby()
-            }
+            KtorServer.StartServer("0.0.0.0", 8080)
+            LoadLobby()
+        }
+
+        val backMultiplayer: Button = findViewById(R.id.backButton_Multiplayer)
+        backMultiplayer.setOnClickListener {
+            (findViewById<ConstraintLayout>(R.id.MainLayout)!!).visibility = VISIBLE
+            (findViewById<ConstraintLayout>(R.id.MultiplayerLayout)!!).visibility = INVISIBLE
         }
 
 
         val connectButton: Button = findViewById(R.id.ConnectButton)
         connectButton.setOnClickListener {
             val ipText: TextInputEditText = findViewById(R.id.ipAddress)
-            var clientConnected = KtorClient.ConnectToServer(ipText.text.toString(), 8080)
-            if (clientConnected) {
-                //Open lobby layout
-                LoadLobby()
-            }
+            KtorClient.ConnectToServer(ipText.text.toString(), 8080)
+            LoadLobby()
+        }
+
+        val backConnect: Button = findViewById(R.id.backButton_Connect)
+        backConnect.setOnClickListener {
+            (findViewById<ConstraintLayout>(R.id.MainLayout)!!).visibility = VISIBLE
+            (findViewById<ConstraintLayout>(R.id.ConnectLayout)!!).visibility = INVISIBLE
         }
     }
-
     fun StartGame(){
         val intent = Intent(this@MainMenu, MainActivity::class.java)
         startActivity(intent)
     }
 
     fun LoadLobby() {
-        //Set new view
-        setContentView(R.layout.activity_lobby)
-        //Set host ip
-        if (KtorServer.isServer)
-            findViewById<TextView>(R.id.HostIP).text = KtorServer.GetServerIpAddress()
-        else
-            findViewById<TextView>(R.id.HostIP).text = KtorClient.hostIP
+        runOnUiThread {
+            //Set new view
+            setContentView(R.layout.activity_lobby)
+            //Set host ip
+            if (KtorServer.isServer)
+                findViewById<TextView>(R.id.HostIP).text = KtorServer.GetServerIpAddress()
+            else
+                findViewById<TextView>(R.id.HostIP).text = KtorClient.hostIP
 
-        val startButton: Button = findViewById(R.id.StartButton)
-        startButton.setOnClickListener {
-            //Opens Waiting for players screen
-            //Message all to start
-            KtorServer.SendStartGameMessage()
+            val backLobby: Button = findViewById(R.id.backButton_Lobby)
+            backLobby.setOnClickListener {
+                setContentView(R.layout.activity_main_menu)
+                LoadMainButtons()
+                //Close client
+                KtorClient.Disconnect()
+                //Shut down server if we hosted
+                if (KtorServer.isServer)
+                    KtorServer.ShutdownServer()
+            }
+
+            val startButton: Button = findViewById(R.id.StartButton)
+            startButton.setOnClickListener {
+                //Opens Waiting for players screen
+                //Message all to start
+                KtorServer.SendStartGameMessage()
+            }
+            //If not server we disable the start button
+            if (!KtorServer.isServer)
+                startButton.visibility = INVISIBLE
+
+            UpdateLobby()
         }
-        //If not server we disable the start button
-        if (!KtorServer.isServer)
-            startButton.visibility = INVISIBLE
-
-        UpdateLobby()
     }
 
     fun UpdateLobby(){
         runOnUiThread {
             if(findViewById<ConstraintLayout>(R.id.Player1) == null)
                 return@runOnUiThread
-            if (KtorClient.totalClientCount >= 1) {
+            if (KtorClient.totalClientCount > 0) {
                 (findViewById<ConstraintLayout>(R.id.Player1)!!).visibility = VISIBLE
+
+                var button = findViewById<ImageButton>(R.id.Player1Profile)
+                var nValue = KtorClient.networkedObjectList[0]?.syncedVariables?.get("Sprite")
+                if (nValue != null)
+                    button.setImageResource((nValue as NetworkedVar<*>).value as Int)
+
+                if (KtorClient.networkID == 0)
+                    button.isEnabled = true
+                else
+                    button.isEnabled = false
+
+                button.setOnClickListener {
+                    if (++selectedProfileID >= KtorClient.profileSpriteList.count())
+                        selectedProfileID = 0
+                    myPlayer!!.UpdateSyncedData("Sprite", KtorClient.profileSpriteList[selectedProfileID])
+                    KtorClient.Update(0f)
+                }
             }
-            if (KtorClient.totalClientCount >= 2) {
+
+            if (KtorClient.totalClientCount > 1) {
                 (findViewById<ConstraintLayout>(R.id.Player2)!!).visibility = VISIBLE
+
+                var button = findViewById<ImageButton>(R.id.Player2Profile)
+                var nValue = KtorClient.networkedObjectList[1]?.syncedVariables?.get("Sprite")
+                if(nValue != null)
+                    button.setImageResource((nValue as NetworkedVar<*>).value as Int)
+
+                if(KtorClient.networkID == 1)
+                    button.isEnabled = true
+                else
+                    button.isEnabled = false
+
+                button.setOnClickListener {
+                    if(++selectedProfileID >= KtorClient.profileSpriteList.count())
+                        selectedProfileID = 0
+                    myPlayer!!.UpdateSyncedData("Sprite",KtorClient.profileSpriteList[selectedProfileID])
+                    KtorClient.Update(0f)
+                }
             }
-            if (KtorClient.totalClientCount >= 3) {
+            if (KtorClient.totalClientCount > 2) {
                 (findViewById<ConstraintLayout>(R.id.Player3)!!).visibility = VISIBLE
+
+                var button = findViewById<ImageButton>(R.id.Player3Profile)
+                var nValue = KtorClient.networkedObjectList[2]?.syncedVariables?.get("Sprite")
+                if(nValue != null)
+                    button.setImageResource((nValue as NetworkedVar<*>).value as Int)
+
+                if(KtorClient.networkID == 2)
+                    button.isEnabled = true
+                else
+                    button.isEnabled = false
+
+                button.setOnClickListener {
+                    if(++selectedProfileID >= KtorClient.profileSpriteList.count())
+                        selectedProfileID = 0
+                    myPlayer!!.UpdateSyncedData("Sprite",KtorClient.profileSpriteList[selectedProfileID])
+                    KtorClient.Update(0f)
+                }
             }
-            if (KtorClient.totalClientCount >= 4) {
+            if (KtorClient.totalClientCount > 3) {
                 (findViewById<ConstraintLayout>(R.id.Player4)!!).visibility = VISIBLE
+
+                var button = findViewById<ImageButton>(R.id.Player4Profile)
+                var nValue = KtorClient.networkedObjectList[3]?.syncedVariables?.get("Sprite")
+                if(nValue != null)
+                    button.setImageResource((nValue as NetworkedVar<*>).value as Int)
+
+                if(KtorClient.networkID == 3)
+                    button.isEnabled = true
+                else
+                    button.isEnabled = false
+
+                button.setOnClickListener {
+                    if(++selectedProfileID >= KtorClient.profileSpriteList.count())
+                        selectedProfileID = 0
+                    myPlayer!!.UpdateSyncedData("Sprite",KtorClient.profileSpriteList[selectedProfileID])
+                    KtorClient.Update(0f)
+                }
             }
         }
     }
-
 }

@@ -55,11 +55,28 @@
         tools:layout_editor_absoluteY="176dp">
 
         <Button
+            android:id="@+id/backButton_Connect"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/back_button"
+            android:text=""
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.15"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.48" />
+
+        <Button
             android:id="@+id/ConnectButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_width="123dp"
+            android:layout_height="62dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_custom"
+            android:fontFamily="@font/kenney_future"
             android:text="Join"
+            android:textColor="#0C66B8"
+            android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textInputLayout" />
@@ -68,17 +85,18 @@
             android:id="@+id/textInputLayout"
             android:layout_width="260dp"
             android:layout_height="65dp"
-            android:layout_marginTop="198dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.6">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/ipAddress"
                 android:layout_width="286dp"
                 android:layout_height="50dp"
+                android:fontFamily="@font/kenney_future"
                 android:hint="host IP"
-                android:text="@string/defaultIP"
                 android:textSize="24sp" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -89,33 +107,55 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <Button
+            android:id="@+id/backButton_Multiplayer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/back_button"
+            android:text=""
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.15"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.48" />
+
+        <Button
             android:id="@+id/JoinButton"
             android:layout_width="140dp"
             android:layout_height="60dp"
-            android:layout_marginStart="141dp"
-            android:layout_marginTop="252dp"
-            android:layout_marginBottom="99dp"
+            android:background="@drawable/button_custom"
+            android:fontFamily="@font/kenney_future"
             android:text="Join"
+            android:textColor="#0C66B8"
+            android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/HostButton"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.66"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.7" />
 
         <Button
             android:id="@+id/HostButton"
             android:layout_width="140dp"
             android:layout_height="60dp"
-            android:layout_marginStart="236dp"
-            android:layout_marginTop="252dp"
-            android:layout_marginBottom="99dp"
+            android:background="@drawable/button_custom"
+            android:fontFamily="@font/kenney_future"
             android:text="Host"
+            android:textColor="#0C66B8"
+            android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.33"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.7" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -130,25 +170,33 @@
 
         <Button
             android:id="@+id/SingleplayerButton"
-            android:layout_width="140dp"
+            android:layout_width="180dp"
             android:layout_height="60dp"
-            android:layout_marginTop="48dp"
+            android:background="@drawable/button_custom"
+            android:fontFamily="@font/kenney_future"
             android:text="Singleplayer"
+            android:textColor="#0C66B8"
+            android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.55" />
 
         <Button
             android:id="@+id/MultiplayerButton"
-            android:layout_width="140dp"
+            android:layout_width="180dp"
             android:layout_height="60dp"
-            android:layout_marginTop="32dp"
+            android:background="@drawable/button_custom"
+            android:fontFamily="@font/kenney_future"
             android:text="Multiplayer"
+            android:textColor="#0C66B8"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/SingleplayerButton" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.8" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

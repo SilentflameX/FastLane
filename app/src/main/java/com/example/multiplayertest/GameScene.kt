@@ -1,5 +1,6 @@
 package com.example.multiplayertest
 
+import KtorClient
 import MyGLRenderer
 import android.app.Activity
 import android.content.Context
@@ -10,6 +11,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.clamp
 import com.example.multiplayertest.GameObjects.GameObject
 import com.example.multiplayertest.GameObjects.NetworkedObject
+import com.example.multiplayertest.GameObjects.NetworkedVar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -38,11 +40,12 @@ object GameScene {
 
     var carList = mutableListOf<GameObject>() //Used to track cars
     val randomGenerator = Random(1)
+    val carSpriteList = listOf(R.drawable.car_black_4, R.drawable.car_blue_4, R.drawable.car_green_4, R.drawable.car_red_4, R.drawable.car_yellow_4)
 
 
     //Player stats
     val InvulnerableDuration = 3.0f
-    val PlayerAcceleration = 0.05f
+    val PlayerAcceleration = 0.04f
     val PlayerBrake = 0.3f
     val PlayerDeclaration = 0.01f
     var playerLifes = 3
@@ -69,17 +72,25 @@ object GameScene {
         while (myPlayer == null) {}//wait
 
         LoadLevel1()
-        //blueCar2.UpdateVariable()
-        myPlayer!!.sprite.scale = Vector3(1.2f, 2.4f, 1f)
-        myPlayer!!.sprite.position = Vector3(0f, 0f, 0f)
-        myPlayer!!.UpdateSyncedData("Position", myPlayer!!.sprite.position)
-        myPlayer!!.UpdateSyncedData("Sprite", R.drawable.car_blue_1)
-        myPlayer!!.UpdateSyncedData("Scale", myPlayer!!.sprite.scale)
+        //Load all car sprites
+        var carID = 0
+        for(car in KtorClient.networkedObjectList){
+            var spriteID = car.value.syncedVariables.get("Sprite")
+            if(spriteID == null) {
+                car.value.sprite.LoadSprite(R.drawable.car_black_1)
+            }
+            else{
+                car.value.sprite.LoadSprite((spriteID as NetworkedVar<*>).value as Int)
+            }
+            car.value.sprite.scale = Vector3(1.2f, 2.4f, 1f)
+            car.value.sprite.position = Vector3(-2.85f + (2.85f * carID++), 0f, 0f)
+        }
     }
 
     fun Update(deltaTime: Float) {
         if(myPlayer == null)
             return
+
         //Update pedals
         if(playerAccelerating){
             playerMoveY += PlayerAcceleration * deltaTime
@@ -111,6 +122,7 @@ object GameScene {
         for(car in carList){
             if( myPlayer!!.sprite.position.y - car.sprite.position.y >= 15f){
                 car.sprite.position = RandomCarPosition()
+                car.sprite.LoadSprite(carSpriteList.random(randomGenerator))
             }
         }
 
@@ -257,23 +269,23 @@ object GameScene {
         floor!!.sprite.LoadSprite(R.drawable.road)
         worldObjectList.add(floor!!)
 
-        CreateCar(RandomCarPosition() + Vector3(0f,0f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,0f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,5f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,5f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,10f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,10f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,15f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,15f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,20f,0f),Vector3(1.2f,2.5f,1f))
-        CreateCar(RandomCarPosition() + Vector3(0f,20f,0f),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
+        CreateCar(RandomCarPosition(),Vector3(1.2f,2.5f,1f))
     }
 
     private fun CreateCar(position :Vector3, scale :Vector3){
         var car = GameObject()
         car.sprite.position = position
         car.sprite.scale = scale
-        car.sprite.LoadSprite(R.drawable.car_black_1)
+        car.sprite.LoadSprite(carSpriteList.random(randomGenerator))
         goList.add(car)
         carList.add(car)
     }
@@ -292,14 +304,14 @@ object GameScene {
             6 -> x = 8.55f
         }
 
-        //we generate from 15 to 30 above player
-        var y = randomGenerator.nextFloat() * (15f) + 15f + myPlayer!!.sprite.position.y
+        //we generate from 15 to 45 above player
+        var y = randomGenerator.nextFloat() * (30f) + 15f + myPlayer!!.sprite.position.y
         //we also check and make sure there are no cars that we will collide with, if not we move up)
         var collision = true
         while(collision){
             collision = false
             for (go in goList) {
-                if(AABBCollision(go.sprite.position.x,x,go.sprite.position.y,y,go.sprite.scale.x/2,go.sprite.scale.x/2,go.sprite.scale.y/2,go.sprite.scale.y/2)){
+                if(AABBCollision(go.sprite.position.x,x,go.sprite.position.y,y,go.sprite.scale.x/2,go.sprite.scale.x/2,go.sprite.scale.y/2,go.sprite.scale.y/2)) {
                     collision = true
                     y += 5
                     break

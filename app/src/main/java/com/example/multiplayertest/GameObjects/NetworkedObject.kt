@@ -3,6 +3,7 @@ package com.example.multiplayertest.GameObjects
 import KtorClient.networkedObjectList
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.GameScene.myPlayer
+import com.example.multiplayertest.MainMenu
 
 class NetworkedVar<T> (t : T){
     var value = t
@@ -36,11 +37,16 @@ class NetworkedObject : GameObject() {
     inline fun <reified T>UpdateFromServer(_name : String, _value : T) {
         if (!syncedVariables.containsKey(_name)){
             AddNetworkedVariable(_name, _value)
+            if(_name == "Sprite")
+                MainMenu.GetInstance().UpdateLobby()
             return
         }
 
         val variable = syncedVariables[_name] as NetworkedVar<T>
         variable.value = _value
+
+        if(_name == "Sprite")
+            MainMenu.GetInstance().UpdateLobby()
     }
 
     //Loops through all variables that need to be updated and send them to server
@@ -52,8 +58,6 @@ class NetworkedObject : GameObject() {
             }
             if(key == "Position")
                 sprite.position = value.value as Vector3
-            else if(key == "Sprite" && sprite.textureId != value.value as Int)
-                sprite.LoadSprite(value.value as Int)
             else if(key == "Scale")
                 sprite.scale = value.value as Vector3
         }
@@ -85,7 +89,7 @@ class NetworkedObject : GameObject() {
 
     inline fun <reified T>AddNetworkedVariable(_name: String, _value : T) {
         var newVar = NetworkedVar(_value)
-        newVar.type = T::class.simpleName.toString()
+        newVar.type = _value!!::class.simpleName.toString()
         syncedVariables[_name] = newVar
     }
 
