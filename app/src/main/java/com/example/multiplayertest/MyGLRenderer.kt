@@ -1,26 +1,17 @@
-import android.content.Context
+package com.example.multiplayertest
+
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
-
+import android.opengl.Matrix
+import androidx.xr.runtime.math.Vector3
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.opengl.GLUtils
 import java.nio.ShortBuffer
-import android.opengl.Matrix
-import androidx.xr.runtime.math.Vector3
-import com.example.multiplayertest.GameScene
-import com.example.multiplayertest.GameScene.myPlayer
-import com.example.multiplayertest.MainActivity
+import javax.microedition.khronos.egl.EGLConfig
+import javax.microedition.khronos.opengles.GL10
 
-class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
-
-
+class MyGLRenderer : GLSurfaceView.Renderer {
     var loadedSpriteMap = mutableMapOf<Int,Int>()
 
     init {
@@ -116,8 +107,6 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
 
         //Compile shaders and link program
         shaderProgram = createProgram(vertexShaderCode, fragmentShaderCode)
-
-
     }
 
 
@@ -136,11 +125,10 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
             0f, 1f, 0f   //Up vector
         )
 
-
-        GameScene.Start()
+        GameScene.start()
     }
 
-    fun UpdateCamera(position: Vector3) {
+    fun updateCamera(position: Vector3) {
         Matrix.setLookAtM(
             viewMatrix, 0,
             position.x, position.y, 10f,  //Camera position
@@ -176,7 +164,7 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
             GLES20.glUniform1i(textureHandle, 0)
 
             //Apply transformation matrix
-            go.sprite.UpdateMatrix()
+            go.sprite.updateMatrix()
             val mvpMatrix = FloatArray(16)
             Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, go.sprite.modelMatrix, 0)
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
@@ -198,7 +186,7 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
             GLES20.glUniform1i(textureHandle, 0)
 
             //Apply transformation matrix
-            go.sprite.UpdateMatrix()
+            go.sprite.updateMatrix()
             val mvpMatrix = FloatArray(16)
             Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, go.sprite.modelMatrix, 0)
              Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvpMatrix, 0)
@@ -216,7 +204,7 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
         GLES20.glDisableVertexAttribArray(texCoordHandle)
     }
 
-    var lastTime : Long = 0
+    private var lastTime : Long = 0
 
     override fun onDrawFrame(gl: GL10?) {
         //Calculate delta time
@@ -225,14 +213,14 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
         lastTime = currentTime
 
         //Update game state
-        GameScene.Update(deltaTime)
-        KtorClient.Update(deltaTime)
-        KtorServer.Update(deltaTime)
+        GameScene.update(deltaTime)
+        KtorClient.update(deltaTime)
+        KtorServer.update(deltaTime)
 
         drawFrame()
     }
 
-    fun loadShader(type: Int, shaderCode: String): Int {
+    private fun loadShader(type: Int, shaderCode: String): Int {
         //Create a shader object
         val shader = GLES20.glCreateShader(type)
 
@@ -252,7 +240,7 @@ class MyGLRenderer(_context: Context) : GLSurfaceView.Renderer {
         return shader
     }
 
-    fun createProgram(vertexShaderCode: String, fragmentShaderCode: String): Int {
+    private fun createProgram(vertexShaderCode: String, fragmentShaderCode: String): Int {
         val vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode)
 

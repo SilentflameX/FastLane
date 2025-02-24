@@ -1,13 +1,10 @@
-
+package com.example.multiplayertest
 import androidx.xr.runtime.math.Vector3
-import com.example.multiplayertest.GameObjects.NetworkedObject
-import com.example.multiplayertest.GameObjects.NetworkedVar
-import com.example.multiplayertest.GameScene
 import com.example.multiplayertest.GameScene.goList
 import com.example.multiplayertest.GameScene.myPlayer
 import com.example.multiplayertest.GameScene.randomGenerator
-import com.example.multiplayertest.MainMenu
-import com.example.multiplayertest.R
+import com.example.multiplayertest.gameobjects.NetworkedObject
+import com.example.multiplayertest.gameobjects.NetworkedVar
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
@@ -27,35 +24,35 @@ object KtorClient {
     var hostIP = ""
     private var port = 0
 
-    lateinit var socket: Socket
-    lateinit var receiveChannel : ByteReadChannel
-    lateinit var sendChannel : ByteWriteChannel
+    private lateinit var socket: Socket
+    private lateinit var receiveChannel : ByteReadChannel
+    private lateinit var sendChannel : ByteWriteChannel
 
     var networkID = -1
 
     val networkedObjectList: MutableMap<Int, NetworkedObject> = mutableMapOf()
 
-    var delayBuffer = 100//in milliseconds
-    var prevMsgTime : TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+    private var delayBuffer = 100//in milliseconds
+    private var prevMsgTime : TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
 
     var totalClientCount = -1
 
     val profileSpriteList = listOf(R.drawable.car_black_1, R.drawable.car_blue_1, R.drawable.car_green_1, R.drawable.car_red_1, R.drawable.car_yellow_1)
 
 
-    fun IsConnected() : Boolean{
+    private fun isConnected() : Boolean{
         return networkID != -1
     }
 
-    fun ConnectToServer(_hostIp: String, _port: Int): Boolean {
-        if(IsConnected())
+    fun connectToServer(hostIp: String, hostPort: Int): Boolean {
+        if(isConnected())
             return true
-        hostIP = _hostIp
-        port = _port
+        hostIP = hostIp
+        port = hostPort
         thread {
             runBlocking {
                 try {
-                    ClientLoop(_hostIp, _port)
+                    clientLoop(hostIp, port)
                 }
                 catch (_: ConnectException){
                     //MainMenu.GetInstance().LoadMainMenu()
@@ -65,15 +62,15 @@ object KtorClient {
         return false
     }
 
-    suspend fun ClientLoop(_hostIp: String, _port: Int){
+    private suspend fun clientLoop(hostIp: String, port: Int){
         val selectorManager = SelectorManager(Dispatchers.IO)
-        socket = aSocket(selectorManager).tcp().connect(_hostIp, _port)
+        socket = aSocket(selectorManager).tcp().connect(hostIp, port)
         receiveChannel = socket.openReadChannel()
         sendChannel = socket.openWriteChannel(autoFlush = true)
         //first init msg
         var initData = receiveChannel.readUTF8Line()
         if(initData == null)//if init msg is null means server got issue
-            return;
+            return
         else
         {
             //get our networkID
@@ -81,8 +78,7 @@ object KtorClient {
             initData = initData.drop(2)
 
             //If got networkedObjects to sync
-            if(initData.length != 0) {
-                println("InitMsg: " + initData)
+            if(initData.isNotEmpty()) {
                 //get all alr existing networkedObjects
                 for (obj in initData.split("}")) {
                     //For each networkedObject
@@ -92,131 +88,133 @@ object KtorClient {
 
                     //Get all syncedVariables
                     val v = obj.drop(2)
-                    if(v.length != 0) {
+                    if(v.isNotEmpty()) {
                         for (value in v.split("{")) {
                             val split = value.split("|")
-                            newNetworkedObj.syncedVariables.put(split[0],NetworkedVar(StringToVar(split[1])))
+                            newNetworkedObj.syncedVariables[split[0]] = NetworkedVar(stringToVar(
+                                split[1]
+                            ))
                         }
                     }
                     goList.add(newNetworkedObj)
-                    networkedObjectList.put(objNetworkID, newNetworkedObj)
+                    networkedObjectList[objNetworkID] = newNetworkedObj
                 }
             }
         }
         //Spawn our player
-        myPlayer = SpawnNetworkedObject()
+        myPlayer = spawnNetworkedObject()
         //Lane positions = -8.55, -5.78, -2.85, 0, 2.85, 5.78, 8.55
         myPlayer!!.sprite.position = Vector3(-2.85f + (2.85f * networkID), 0f, 0f)
-        myPlayer!!.UpdateSyncedData("Position", myPlayer!!.sprite.position)
-        Update(0f)
+        myPlayer!!.updateSyncedData("Position", myPlayer!!.sprite.position)
+        update(0f)
 
         //Client receive loop
         while (networkID != -1) {
-            var stream = receiveChannel.readUTF8Line()
+            val stream = receiveChannel.readUTF8Line()
             if(!stream.isNullOrEmpty())
             {
                 //split msg up if got multiple msgs
-                var messages = stream.split("\n")
+                val messages = stream.split("\n")
                 for(msg in messages) {
                     //parse message type
                     val type = msg.first()
-                    var data = msg.drop(1)
+                    val data = msg.drop(1)
                     when (type) {
-                        'U' -> UpdateNetworkedValue(data) //Value update
-                        'S' -> ServerSpawnNetworkedObject(data)
-                        'J' -> NewClientJoined(data) //New client joined
-                        'G' -> StartGame(data) //Start game
+                        'U' -> updateNetworkedValue(data) //Value update
+                        'S' -> serverSpawnNetworkedObject(data)
+                        'J' -> newClientJoined(data) //New client joined
+                        'G' -> startGame(data) //Start game
                     }
                 }
             }
         }
     }
 
-    private fun StartGame(data: String) {
+    private fun startGame(data: String) {
         randomGenerator = Random(data.toInt())
-        MainMenu.GetInstance().StartGame()
+        MainMenu.getInstance().startGame()
     }
 
-    fun Disconnect(){
+    fun disconnect(){
         networkID = -1
         socket.close()
         //Reset everything
-        GameScene.Reset()
+        GameScene.reset()
 
         networkedObjectList.clear()
         totalClientCount = -1
     }
 
-    fun Update(deltaTime: Float){
+    fun update(deltaTime: Float){
         for (obj in networkedObjectList){
-            obj.value.UpdateVariables()
+            obj.value.updateVariables()
         }
     }
 
-    fun UpdateNetworkedValue(data : String) {
+    private fun updateNetworkedValue(data : String) {
         val split = data.split("|")
         //first would be networkedID
         val objNetworkedID: Int = split[0].toInt()
         //Update
-        networkedObjectList[objNetworkedID]?.UpdateFromServer(split[1], StringToVar(split[2]))
+        networkedObjectList[objNetworkedID]?.updateFromServer(split[1], stringToVar(split[2]))
     }
 
-    fun StringToVar(data : String) : Any {
+    private fun stringToVar(data : String) : Any {
         val type = data.first()
         val vari = data.drop(1)
 
         when (type) {
-            'V' -> return StringToVector3(vari)
+            'V' -> return stringToVector3(vari)
             'I' -> return vari.toInt()
             'F' -> return vari.toFloat()
         }
         return Any()
     }
 
-    fun NetworkedObjectsToPacket() : String{
+    fun networkedObjectsToPacket() : String{
         var packet = ""
         for(obj in networkedObjectList){
             packet += "}"
-            packet += obj.value.ObjectToPacket()
+            packet += obj.value.objectToPacket()
         }
         return packet
     }
 
-    fun SpawnNetworkedObject() : NetworkedObject{
+    private fun spawnNetworkedObject() : NetworkedObject {
         val newNetworkedObj = NetworkedObject()
-        //tell all to spawn
         //Create packetMsg
-        val packet = "S" + newNetworkedObj.ObjectToPacket()
+        val packet = "S" + newNetworkedObj.objectToPacket()
 
-        SendPacketToServer(packet)
+        //Send to server to tell all clients to spawn
+        sendPacketToServer(packet)
         goList.add(newNetworkedObj)
-        networkedObjectList.put(newNetworkedObj.objNetworkID,newNetworkedObj)
+        networkedObjectList[newNetworkedObj.objNetworkID] = newNetworkedObj
         return newNetworkedObj
     }
 
-    fun ServerSpawnNetworkedObject(data: String) {
-        var NetObjID = data.toInt()
+    private fun serverSpawnNetworkedObject(data: String) {
+        val netObjID = data.toInt()
         //We only spawn if its not already spawned
-        if (networkedObjectList.get(NetObjID) == null) {
-            var newNetworkedObj = NetworkedObject()
+        if (networkedObjectList[netObjID] == null) {
+            val newNetworkedObj = NetworkedObject()
             goList.add(newNetworkedObj)
-            networkedObjectList.put(NetObjID, newNetworkedObj)
+            networkedObjectList[netObjID] = newNetworkedObj
         }
     }
 
 
-    fun StringToVector3(vString: String) : Vector3 {
+    private fun stringToVector3(vString: String) : Vector3 {
         val xyz = (vString.substring(1, vString.length - 1)).split(", ")
         return Vector3(xyz[0].drop(2).toFloat(), xyz[1].drop(2).toFloat(), xyz[2].drop(2).toFloat())
     }
 
-    private suspend fun SendData(packet: String) = coroutineScope{
+    private suspend fun sendData(packet: String) = coroutineScope{
         sendChannel.writeStringUtf8(packet  + "\n")
         sendChannel.flush()
     }
 
-    fun SendPacketToServer(packet: String) {
-        if (!IsConnected()) return
+    fun sendPacketToServer(packet: String) {
+        if (!isConnected()) return
 
         //Maybe can create some buffer here or add all into 1 packet and send at once
         if(prevMsgTime.elapsedNow().inWholeMilliseconds < delayBuffer)
@@ -225,13 +223,13 @@ object KtorClient {
         }
         prevMsgTime = TimeSource.Monotonic.markNow()
         GlobalScope.async {
-            SendData(packet)
+            sendData(packet)
         }
     }
 
-    fun NewClientJoined(packet: String){
+    private fun newClientJoined(packet: String){
         totalClientCount = packet.toInt()
-        MainMenu.GetInstance().UpdateLobby()
+        MainMenu.getInstance().updateLobby()
     }
 
 }

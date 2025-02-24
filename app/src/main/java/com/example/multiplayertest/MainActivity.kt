@@ -1,11 +1,8 @@
 package com.example.multiplayertest
 
-import KtorClient
-import KtorServer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import MyGLRenderer
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -27,7 +24,7 @@ import com.example.multiplayertest.GameScene.playerScore
 class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var gyroscope: Sensor? = null
-    lateinit var glRenderer: MyGLRenderer
+    private lateinit var glRenderer: MyGLRenderer
 
     init {
         instance = this
@@ -40,7 +37,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             return instance!!.applicationContext
         }
 
-        fun GetInstance() : MainActivity{
+        fun getInstance() : MainActivity{
             return  instance!!
         }
     }
@@ -52,18 +49,16 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         setContentView(R.layout.activity_main)
 
         //Disable back button
-        val callback = onBackPressedDispatcher.addCallback(this) {
+        onBackPressedDispatcher.addCallback(this) {
             // Handle the back button event
         }
 
         //Initialize the GLSurfaceView
-        var glSurfaceView: GLSurfaceView = findViewById(R.id.glSurfaceView)
+        val glSurfaceView: GLSurfaceView = findViewById(R.id.glSurfaceView)
         glSurfaceView.setEGLContextClientVersion(2) //Use OpenGL ES 2.0
-        glRenderer = MyGLRenderer(this)
+        glRenderer = MyGLRenderer()
         glSurfaceView.setRenderer(glRenderer)
         glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-
-        val context: Context = MainActivity.applicationContext()
 
         //Set up Gyroscope
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -81,8 +76,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val leftButton: ImageButton = findViewById(R.id.brake)
         leftButton.setOnTouchListener { v, event ->
             when (event?.action) {
-                MotionEvent.ACTION_DOWN -> {GameScene.PlayerBrake(true)}
-                MotionEvent.ACTION_UP -> {GameScene.PlayerBrake(false)}
+                MotionEvent.ACTION_DOWN -> {GameScene.playerBrake(true)}
+                MotionEvent.ACTION_UP -> {GameScene.playerBrake(false)}
             }
             v?.onTouchEvent(event) ?: true
         }
@@ -90,34 +85,34 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val rightButton: ImageButton = findViewById(R.id.accelerate)
         rightButton.setOnTouchListener { v, event ->
             when (event?.action) {
-                MotionEvent.ACTION_DOWN -> {GameScene.PlayerAccelerate(true)}
-                MotionEvent.ACTION_UP -> {GameScene.PlayerAccelerate(false)}
+                MotionEvent.ACTION_DOWN -> {GameScene.playerAccelerate(true)}
+                MotionEvent.ACTION_UP -> {GameScene.playerAccelerate(false)}
             }
             v?.onTouchEvent(event) ?: true
         }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (event?.getAction() != KeyEvent.ACTION_DOWN) {
+        if (event?.action != KeyEvent.ACTION_DOWN) {
             return super.onKeyDown(keyCode, event)
         }
         return when (keyCode) {
             KeyEvent.KEYCODE_A -> {
-                GameScene.PLayerInput(-2f)
+                GameScene.playerInput(-2f)
                 true
             }
             KeyEvent.KEYCODE_D -> {
-                GameScene.PLayerInput(2f)
+                GameScene.playerInput(2f)
                 true
             }
             KeyEvent.KEYCODE_W -> {
-                GameScene.PlayerBrake(false)
-                GameScene.PlayerAccelerate(true)
+                GameScene.playerBrake(false)
+                GameScene.playerAccelerate(true)
                 true
             }
             KeyEvent.KEYCODE_S -> {
-                GameScene.PlayerAccelerate(false)
-                GameScene.PlayerBrake(true)
+                GameScene.playerAccelerate(false)
+                GameScene.playerBrake(true)
                 true
             }
             else -> super.onKeyDown(keyCode, event)
@@ -139,11 +134,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-            var deltaX = event.values[0] //Rotation around X-axis (pitch)
-            var deltaY = event.values[1] //Rotation around Y-axis (roll)
-            var deltaZ = event.values[2] //Rotation around Y-axis (roll)
+            //var deltaX = event.values[0] //Rotation around X-axis (pitch)
+            val deltaY = event.values[1] //Rotation around Y-axis (roll)
+            //var deltaZ = event.values[2] //Rotation around Y-axis (roll)
 
-            GameScene.PLayerInput(deltaY)
+            GameScene.playerInput(deltaY)
         }
     }
 
@@ -151,7 +146,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         //Not needed for basic movement
     }
 
-    fun GameOver() {
+    fun gameOver() {
         runOnUiThread {
             findViewById<ConstraintLayout>(R.id.GameOverScreen).visibility = VISIBLE
             findViewById<TextView>(R.id.FinalScore).text = "%05d".format(playerScore)
@@ -161,16 +156,16 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 startActivity(intent)
 
                 //Disconnect
-                KtorClient.Disconnect()
+                KtorClient.disconnect()
                 //If server we shut down server
                 if (KtorServer.isServer)
-                    KtorServer.ShutdownServer()
+                    KtorServer.shutdownServer()
 
             }
         }
     }
 
-    fun UpdateScoreText(){
+    fun updateScoreText(){
         runOnUiThread {
             findViewById<TextView>(R.id.score).text = "%05d".format(playerScore)
         }
@@ -196,7 +191,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             onClick = {
                 connected = true
                 serverScope.launch {
-                    KtorServer.startServer("10.0.2.15",8090)
+                    com.example.multiplayertest.KtorServer.startServer("10.0.2.15",8090)
                 }
             }) {
             Text("Server")
@@ -205,7 +200,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             onClick = {
                 connected = true
                 clientScope.launch {
-                    KtorClient.connectToServer("192.168.1.198", 8000)
+                    com.example.multiplayertest.KtorClient.connectToServer("192.168.1.198", 8000)
                 }
             }) {
             Text("Client")
@@ -225,11 +220,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             Text("Down")
         }
 
-        Text(KtorServer.DataToString(data.value))
+        Text(com.example.multiplayertest.KtorServer.DataToString(data.value))
 
         Button(
             onClick = {
-                KtorClient.getData()
+                com.example.multiplayertest.KtorClient.getData()
             }) {
             Text("Refresh")
         }

@@ -1,5 +1,4 @@
-package com.example.multiplayertest.GameObjects
-import MyGLRenderer
+package com.example.multiplayertest.gameobjects
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.opengl.GLES20
@@ -7,18 +6,19 @@ import android.opengl.GLUtils
 import android.opengl.Matrix
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.MainActivity
+import com.example.multiplayertest.MyGLRenderer
 
 
 class Sprite {
     var position = Vector3(0.0f,0.0f,0.0f)
     var scale = Vector3(1f,1f,1f)
-    var rotation = 0.0f
+    private var rotation = 0.0f
 
     var textureId = -1
     var modelMatrix  = FloatArray(16)
     var alpha = 1f
 
-    fun UpdateMatrix()
+    fun updateMatrix()
     {
         Matrix.setIdentityM(modelMatrix, 0)
         Matrix.translateM(modelMatrix, 0, position.x, position.y, position.z) // Translate
@@ -26,14 +26,14 @@ class Sprite {
         Matrix.scaleM(modelMatrix, 0, scale.x, scale.y, scale.z)     // Scale
     }
 
-    fun LoadSprite(resourceId: Int)
+    fun loadSprite(resourceId: Int)
     {
-        if(MyGLRenderer.glRenderer().loadedSpriteMap.get(resourceId) == null){
+        if(MyGLRenderer.glRenderer().loadedSpriteMap[resourceId] == null){
             textureId = loadTexture(resourceId)
             MyGLRenderer.glRenderer().loadedSpriteMap[resourceId] = textureId
         }
         else {
-            textureId = MyGLRenderer.glRenderer().loadedSpriteMap.get(resourceId)!!
+            textureId = MyGLRenderer.glRenderer().loadedSpriteMap[resourceId]!!
         }
     }
 

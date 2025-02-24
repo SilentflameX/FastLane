@@ -1,4 +1,4 @@
-
+package com.example.multiplayertest
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.ServerSocket
 import io.ktor.network.sockets.Socket
@@ -26,59 +26,58 @@ import kotlin.concurrent.thread
 
 object KtorServer {
     var isServer = false
-    var serverSocket : ServerSocket? = null
-    var selectorManager : SelectorManager? = null
+    private var serverSocket : ServerSocket? = null
+    private var selectorManager : SelectorManager? = null
     private var serverJob: Job? = null
     private val writeMutex = Mutex()
 
-    class ClientInfo(_socket : Socket,  _rChannel : ByteReadChannel, _sChannel : ByteWriteChannel, _cID : Int){
-        var socket = _socket
-        var receiveChannel = _rChannel
-        var sendChannel = _sChannel
-        var clientID = _cID
+    class ClientInfo(socket : Socket,  rChannel : ByteReadChannel, sChannel : ByteWriteChannel, cID : Int){
+        var socket = socket
+        var receiveChannel = rChannel
+        var sendChannel = sChannel
+        var clientID = cID
     }
 
-    var clientsList = mutableListOf<ClientInfo>()
+    private var clientsList = mutableListOf<ClientInfo>()
 
-    fun StartServer(_hostIP: String, _hostPort: Int) : Boolean {
+    fun startServer(hostIP: String, hostPort: Int){
         if (isServer)
-            return false
+            return
 
         isServer = true
         serverJob = CoroutineScope(Dispatchers.IO).launch {
-            ServerLoop(_hostIP, _hostPort)
+            serverLoop(hostIP, hostPort)
         }
         //Since we also playing we need connect to ourselves
-        KtorClient.ConnectToServer("localhost", _hostPort)
-        return false
+        KtorClient.connectToServer("localhost", hostPort)
     }
 
-    fun Update(deltaTime: Float){
+    fun update(deltaTime: Float){
         //Update whatever server side values
     }
 
-    private suspend fun ServerLoop(_hostIP: String, _hostPort: Int) {
+    private suspend fun serverLoop(hostIP: String, hostPort: Int) {
         selectorManager = SelectorManager(Dispatchers.IO)
-        serverSocket = aSocket(selectorManager!!).tcp().bind(_hostIP, _hostPort)
+        serverSocket = aSocket(selectorManager!!).tcp().bind(hostIP, hostPort)
 
         while (isServer) {
-            var socket = serverSocket!!.accept()
-            var receiveChannel = socket.openReadChannel()
-            var sendChannel = socket.openWriteChannel(autoFlush = true)
-            var newClientID = clientsList.size
-            var newClient = ClientInfo(socket, receiveChannel, sendChannel, newClientID)
+            val socket = serverSocket!!.accept()
+            val receiveChannel = socket.openReadChannel()
+            val sendChannel = socket.openWriteChannel(autoFlush = true)
+            val newClientID = clientsList.size
+            val newClient = ClientInfo(socket, receiveChannel, sendChannel, newClientID)
             clientsList.add(newClient)
             //Send confirmation Msg
             //Send its networkID
             var confirmationMsg = "$newClientID"
             //Send all networkedObjects
-            confirmationMsg += KtorClient.NetworkedObjectsToPacket()
+            confirmationMsg += KtorClient.networkedObjectsToPacket()
             writeMutex.withLock {
                 newClient.sendChannel.writeStringUtf8(confirmationMsg + "\n")
             }
             thread {
                 runBlocking {
-                    CheckMessages(newClient.clientID)
+                    checkMessages(newClient.clientID)
                 }
             }
             //Update all Clients that someone joined
@@ -90,7 +89,7 @@ object KtorServer {
         }
     }
 
-    private suspend fun CheckMessages(clientID: Int) = coroutineScope {
+    private suspend fun checkMessages(clientID: Int) = coroutineScope {
         try {
             while (isServer) {
                 val data = clientsList[clientID].receiveChannel.readUTF8Line() ?: break
@@ -109,7 +108,7 @@ object KtorServer {
         }
     }
 
-    fun SendStartGameMessage(seed: Int) {
+    fun sendStartGameMessage(seed: Int) {
         println("Seed: $seed")
         GlobalScope.async {
             for (client in clientsList) {
@@ -120,7 +119,7 @@ object KtorServer {
         }
     }
 
-    fun ShutdownServer() {
+    fun shutdownServer() {
         isServer = false
         serverJob?.cancel()
 
@@ -134,7 +133,7 @@ object KtorServer {
 
     }
 
-    fun GetServerIpAddress(): String? {
+    fun getServerIpAddress(): String? {
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces()
             for (networkInterface in interfaces) {
@@ -143,7 +142,9 @@ object KtorServer {
                     if (!inetAddress.isLoopbackAddress && inetAddress is InetAddress) {
                         val hostAddress = inetAddress.hostAddress
                         //Skip IPv6 addresses if you only want IPv4
-                        if (hostAddress.contains(":")) continue
+                        if (hostAddress != null) {
+                            if (hostAddress.contains(":")) continue
+                        }
                         return hostAddress
                     }
                 }
