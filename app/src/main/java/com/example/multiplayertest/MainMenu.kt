@@ -83,7 +83,7 @@ class MainMenu : ComponentActivity() {
         //Host server and connect ourselves
         val singlePlayer: Button = findViewById(R.id.SingleplayerButton)
         singlePlayer.setOnClickListener {
-            KtorServer.startServer(getString(R.string.defaultIP), getString(R.string.defaultPort).toInt())
+            KtorServer.startServer("0.0.0.0", getString(R.string.defaultPort).toInt())
             startGame()
         }
 
@@ -105,7 +105,7 @@ class MainMenu : ComponentActivity() {
         val hostButton: Button = findViewById(R.id.HostButton)
         hostButton.setOnClickListener {
             //We start server
-            KtorServer.startServer(getString(R.string.defaultIP), getString(R.string.defaultPort).toInt())
+            KtorServer.startServer("0.0.0.0", getString(R.string.defaultPort).toInt())
             loadLobby()
         }
 

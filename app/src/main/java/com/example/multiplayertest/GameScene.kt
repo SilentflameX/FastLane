@@ -147,7 +147,7 @@ object GameScene {
             for (go in goList) {
                 if (go == myPlayer)
                     continue
-//If there is collision
+                //If there is collision
                 if (aabbCollision(myPlayer!!,go)) {
                     //We move player back
                     //playerNewPos += Vector3(result.second.x, result.second.y, playerNewPos.z)
