@@ -4,23 +4,24 @@ import KtorClient
 import KtorServer
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.multiplayertest.GameObjects.NetworkedVar
 import com.example.multiplayertest.GameScene.myPlayer
 import com.google.android.material.textfield.TextInputEditText
 import kotlin.random.Random
+
 
 class MainMenu : ComponentActivity() {
     init {
@@ -41,6 +42,7 @@ class MainMenu : ComponentActivity() {
     }
 
     var selectedProfileID = 0
+    private lateinit var backgroundAnimation: AnimationDrawable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +60,11 @@ class MainMenu : ComponentActivity() {
         LoadMainButtons()
     }
 
+    override fun onStart() {
+        super.onStart()
+        backgroundAnimation.start()
+    }
+
     fun LoadMainButtons(){
 
         //Disable back button
@@ -66,11 +73,19 @@ class MainMenu : ComponentActivity() {
         }
 
         setContentView(R.layout.activity_main_menu)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }*/
+
+
+        findViewById<ImageView>(R.id.backgroundAnim).apply {
+            setBackgroundResource(R.drawable.background_animation)
+            backgroundAnimation = background as AnimationDrawable
         }
+        backgroundAnimation.start()
+
 
         //Host server and connect ourselves
         val SinglePlayer: Button = findViewById(R.id.SingleplayerButton)
@@ -126,6 +141,13 @@ class MainMenu : ComponentActivity() {
         startActivity(intent)
     }
 
+    fun LoadMainMenu(){
+        runOnUiThread {
+            setContentView(R.layout.activity_main_menu)
+            LoadMainButtons()
+        }
+    }
+
     fun LoadLobby() {
         runOnUiThread {
             //Set new view
@@ -138,13 +160,15 @@ class MainMenu : ComponentActivity() {
 
             val backLobby: Button = findViewById(R.id.backButton_Lobby)
             backLobby.setOnClickListener {
-                setContentView(R.layout.activity_main_menu)
-                LoadMainButtons()
                 //Close client
-                KtorClient.Disconnect()
+                if(KtorClient.networkID != -1)
+                    KtorClient.Disconnect()
                 //Shut down server if we hosted
                 if (KtorServer.isServer)
                     KtorServer.ShutdownServer()
+
+
+                LoadMainMenu()
             }
 
             val startButton: Button = findViewById(R.id.StartButton)
@@ -185,7 +209,6 @@ class MainMenu : ComponentActivity() {
                     KtorClient.Update(0f)
                 }
             }
-
             if (KtorClient.totalClientCount > 1) {
                 (findViewById<ConstraintLayout>(R.id.Player2)!!).visibility = VISIBLE
 

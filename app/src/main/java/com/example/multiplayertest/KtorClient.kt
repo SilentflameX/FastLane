@@ -62,6 +62,7 @@ object KtorClient {
                     ClientLoop(_hostIp, _port)
                 }
                 catch (_: ConnectException){
+                    //MainMenu.GetInstance().LoadMainMenu()
                 }
             }
         }
