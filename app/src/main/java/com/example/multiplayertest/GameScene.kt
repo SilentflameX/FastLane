@@ -2,22 +2,12 @@ package com.example.multiplayertest
 
 import KtorClient
 import MyGLRenderer
-import android.app.Activity
-import android.content.Context
 import android.widget.ImageView
-import android.widget.TextView
-import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.clamp
 import com.example.multiplayertest.GameObjects.GameObject
 import com.example.multiplayertest.GameObjects.NetworkedObject
 import com.example.multiplayertest.GameObjects.NetworkedVar
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.lang.Float.max
-import java.lang.Float.min
 import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 import kotlin.math.floor
@@ -25,8 +15,8 @@ import kotlin.random.Random
 
 
 object GameScene {
-    var goList = mutableListOf<GameObject>() //Used to store dynamic objects
-    var worldObjectList = mutableListOf<GameObject>() //Used to store static world objects ie. walls
+    var goList = mutableListOf<GameObject>() //Used to store dynamic objects ie.cars
+    var worldObjectList = mutableListOf<GameObject>() //Used to store static world objects ie. floor/walls
     var myPlayer : NetworkedObject? = null
     var floor : GameObject? = null
     var healthIconList = mutableListOf<ImageView>()
@@ -70,7 +60,6 @@ object GameScene {
 
     fun Start() {
         while (myPlayer == null) {}//wait
-
 
         LoadLevel1()
         //Load all car sprites
@@ -130,7 +119,7 @@ object GameScene {
         //Update Camera to follow
         MyGLRenderer.glRenderer().UpdateCamera(myPlayer!!.sprite.position + Vector3(0f,5f,0f))
         //Update Score
-        playerScore = floor(myPlayer!!.sprite.position.y * 1).toInt()
+        playerScore = myPlayer!!.sprite.position.y.toInt()
         MainActivity.GetInstance().UpdateScoreText()
     }
 
@@ -218,49 +207,13 @@ object GameScene {
         val h1 = go1.sprite.scale.y / 2
         val h2 = go2.sprite.scale.y / 2
 
-        return  go1.sprite.position.x - w1 < go2.sprite.position.x + w2 &&  // Right edge of A doesn't pass left edge of B
-                go1.sprite.position.x + w1 > go2.sprite.position.x - w2 &&  // Left edge of A doesn't pass right edge of B
-                go1.sprite.position.y - h1 < go2.sprite.position.y + h2 &&  // Bottom edge of A doesn't pass top edge of B
-                go1.sprite.position.y + h1 > go2.sprite.position.y - h2    // Top edge of A doesn't pass bottom edge of B
+        return AABBCollision(go1.sprite.position.x, go2.sprite.position.x, go1.sprite.position.y, go2.sprite.position.y, w1, w2, h1, h2)
     }
 
     private fun AABBCollision(x1 : Float,x2 : Float,y1 : Float,y2 : Float,w1 : Float,w2 : Float,h1 : Float,h2 : Float) : Boolean {
         return  (x1 - w1 < x2 + w2) && (x1 + w1 > x2 - w2) &&
                 (y1 - h1 < y2 + h2) && (y1 + h1 > y2 - h2)
     }
-
-
-    private fun CircleAABB(circleOriPos : Vector2, circlePos : Vector2, circleRadius : Float, min : Vector2, max : Vector2) : Pair<Boolean , Vector2> {
-        var closestPointToCircleX = circlePos.x
-        var closestPointToCircleY = circlePos.y
-
-        if (closestPointToCircleX < min.x)
-            closestPointToCircleX = min.x
-        else if (closestPointToCircleX > max.x)
-            closestPointToCircleX = max.x
-
-        if (closestPointToCircleY < min.y)
-            closestPointToCircleY = min.y
-        else if (closestPointToCircleY > max.y)
-            closestPointToCircleY = max.y
-
-        var circleToBox = circlePos - Vector2(closestPointToCircleX, closestPointToCircleY)
-        var collided = circleToBox.lengthSquared <= circleRadius * circleRadius;
-        var pushback = Vector2()
-        if (collided) {
-            //Find edge and find normal
-            if (circleOriPos.y > max.y)//top
-                pushback = Vector2(0f, circleRadius - (circlePos.y - max.y))
-            else if (circleOriPos.y < min.y)//bottom
-                pushback = Vector2(0f, - (circleRadius - (min.y - circlePos.y)))
-            else if (circleOriPos.x < min.x)//left
-                pushback = Vector2(-(circleRadius - (min.x - circlePos.x)),0f)
-            else//right
-                pushback = Vector2(circleRadius - (circlePos.x - max.x),0f)
-        }
-        return Pair(collided, pushback)
-    }
-
 
     //Lane positions = -8.55, -5.78, -2.85, 0, 2.85, 5.78, 8.55
     private fun LoadLevel1(){

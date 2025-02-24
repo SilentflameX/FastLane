@@ -2,7 +2,6 @@ package com.example.multiplayertest.GameObjects
 
 import KtorClient.networkedObjectList
 import androidx.xr.runtime.math.Vector3
-import com.example.multiplayertest.GameScene.myPlayer
 import com.example.multiplayertest.MainMenu
 
 class NetworkedVar<T> (t : T){
@@ -37,7 +36,7 @@ class NetworkedObject : GameObject() {
     inline fun <reified T>UpdateFromServer(_name : String, _value : T) {
         if (!syncedVariables.containsKey(_name)){
             AddNetworkedVariable(_name, _value)
-            if(_name == "Sprite")
+            if(_name == "Sprite")//We update the screen with new selected sprite
                 MainMenu.GetInstance().UpdateLobby()
             return
         }
@@ -45,7 +44,7 @@ class NetworkedObject : GameObject() {
         val variable = syncedVariables[_name] as NetworkedVar<T>
         variable.value = _value
 
-        if(_name == "Sprite")
+        if(_name == "Sprite")//We update the screen with new selected sprite
             MainMenu.GetInstance().UpdateLobby()
     }
 
@@ -63,12 +62,13 @@ class NetworkedObject : GameObject() {
         }
     }
 
-    //Creates the message and sends to the server
+    //Adds more info to the packet and send to server
     private fun SendUpdateToServer(_variable :NetworkedVar<*>, _varName : String) {
         var packetString = "U$objNetworkID|" + CreatePacket(_variable, _varName)
         KtorClient.SendPacketToServer(packetString)
     }
 
+    //Converts the variable to a formated packet
     private fun CreatePacket(_variable :NetworkedVar<*>, _name : String) : String {
         when (_variable.type) {
             "Vector3" -> return "$_name|V" + ( _variable.value as Vector3).toString()
@@ -78,6 +78,7 @@ class NetworkedObject : GameObject() {
         return ""
     }
 
+    //Converts a NetworkedObject into a string to send through network
     fun ObjectToPacket() : String{
         var packet = "$objNetworkID"
         for(sV in syncedVariables){
@@ -86,16 +87,10 @@ class NetworkedObject : GameObject() {
         return packet
     }
 
-
+    //Adds a new variable to map of synced variables
     inline fun <reified T>AddNetworkedVariable(_name: String, _value : T) {
         var newVar = NetworkedVar(_value)
         newVar.type = _value!!::class.simpleName.toString()
         syncedVariables[_name] = newVar
     }
-
-    fun GetNetworkedValue(_name : String) : Any?{
-        return (syncedVariables[_name] as NetworkedVar<*>).value
-    }
-
-
 }

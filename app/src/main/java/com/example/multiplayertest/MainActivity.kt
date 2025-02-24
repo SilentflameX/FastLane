@@ -144,7 +144,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             var deltaZ = event.values[2] //Rotation around Y-axis (roll)
 
             GameScene.PLayerInput(deltaY)
-            //GameScene.MovePlayer(Vector3(-deltaX, 0f, 0f) * moveSpeed)
         }
     }
 

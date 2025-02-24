@@ -1,6 +1,4 @@
 
-import android.view.View.VISIBLE
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.xr.runtime.math.Vector3
 import com.example.multiplayertest.GameObjects.NetworkedObject
 import com.example.multiplayertest.GameObjects.NetworkedVar
@@ -10,8 +8,6 @@ import com.example.multiplayertest.GameScene.myPlayer
 import com.example.multiplayertest.GameScene.randomGenerator
 import com.example.multiplayertest.MainMenu
 import com.example.multiplayertest.R
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
