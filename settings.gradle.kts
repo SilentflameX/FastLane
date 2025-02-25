@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MultiplayerTest"
+rootProject.name = "FastLane"
 include(":app")
  

@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -13,12 +15,15 @@ import android.hardware.SensorManager
 import android.opengl.GLSurfaceView
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.Surface
+import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.example.multiplayertest.GameScene.gamePaused
 import com.example.multiplayertest.GameScene.playerScore
 
 class MainActivity : ComponentActivity(), SensorEventListener {
@@ -51,6 +56,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         //Disable back button
         onBackPressedDispatcher.addCallback(this) {
             // Handle the back button event
+            OpenPauseMenu()
+        }
+
+        val pauseButton: ImageButton = findViewById(R.id.pauseButton)
+        pauseButton.setOnClickListener {
+            OpenPauseMenu()
         }
 
         //Initialize the GLSurfaceView
@@ -135,8 +146,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             //var deltaX = event.values[0] //Rotation around X-axis (pitch)
-            val deltaY = event.values[1] //Rotation around Y-axis (roll)
+            var deltaY = event.values[1] //Rotation around Y-axis (roll)
             //var deltaZ = event.values[2] //Rotation around Y-axis (roll)
+
+            if(windowManager.getDefaultDisplay().rotation != Surface.ROTATION_90)
+                deltaY = -deltaY
 
             GameScene.playerInput(deltaY)
         }
@@ -168,6 +182,30 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     fun updateScoreText(){
         runOnUiThread {
             findViewById<TextView>(R.id.score).text = "%05d".format(playerScore)
+        }
+    }
+
+    fun OpenPauseMenu(){
+        runOnUiThread {
+            //Popup quit menu
+            gamePaused = true
+            findViewById<ConstraintLayout>(R.id.PauseScreen).visibility = VISIBLE
+            findViewById<ImageButton>(R.id.QuitButton).setOnClickListener {
+                //Go back to main activity
+                val intent = Intent(this@MainActivity, MainMenu::class.java)
+                startActivity(intent)
+
+                //Disconnect
+                KtorClient.disconnect()
+                //If server we shut down server
+                if (KtorServer.isServer)
+                    KtorServer.shutdownServer()
+            }
+            findViewById<ImageButton>(R.id.ResumeButton).setOnClickListener {
+                //Resume game
+                findViewById<ConstraintLayout>(R.id.PauseScreen).visibility = INVISIBLE
+                gamePaused = false
+            }
         }
     }
 }

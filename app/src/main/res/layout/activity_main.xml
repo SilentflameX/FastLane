@@ -14,6 +14,70 @@
         android:layout_height="match_parent" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/PauseScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible">
+
+        <ImageView
+            android:id="@+id/pauseScreen"
+            android:layout_width="283dp"
+            android:layout_height="269dp"
+            android:src="@drawable/button_square_depth_flat"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/PausedText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Paused"
+            android:textColor="#FF0000"
+            android:textSize="34sp"
+            app:layout_constraintBottom_toBottomOf="@+id/pauseScreen"
+            app:layout_constraintEnd_toEndOf="@id/pauseScreen"
+            app:layout_constraintStart_toStartOf="@id/pauseScreen"
+            app:layout_constraintTop_toTopOf="@id/pauseScreen"
+            app:layout_constraintVertical_bias="0.151" />
+
+
+        <ImageButton
+            android:id="@+id/QuitButton"
+            android:layout_width="110dp"
+            android:layout_height="109dp"
+            android:layout_marginBottom="-20dp"
+            android:backgroundTint="#00FFFFFF"
+            android:scaleType="fitCenter"
+            android:src="@drawable/button_round_depth_flat"
+            app:layout_constraintBottom_toBottomOf="@+id/pauseScreen"
+            app:layout_constraintEnd_toEndOf="@id/pauseScreen"
+            app:layout_constraintHorizontal_bias="0.2"
+            app:layout_constraintStart_toStartOf="@id/pauseScreen"
+            app:layout_constraintTop_toTopOf="@id/pauseScreen"
+            app:layout_constraintVertical_bias="0.65" />
+
+        <ImageButton
+            android:id="@+id/ResumeButton"
+            android:layout_width="110dp"
+            android:layout_height="109dp"
+            android:layout_marginBottom="-20dp"
+            android:backgroundTint="#00FFFFFF"
+            android:scaleType="fitCenter"
+            android:src="@drawable/button_round_depth_flat_resume"
+            app:layout_constraintBottom_toBottomOf="@+id/pauseScreen"
+            app:layout_constraintEnd_toEndOf="@id/pauseScreen"
+            app:layout_constraintHorizontal_bias="0.8"
+            app:layout_constraintStart_toStartOf="@id/pauseScreen"
+            app:layout_constraintTop_toTopOf="@id/pauseScreen"
+            app:layout_constraintVertical_bias="0.65" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/GameOverScreen"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -92,6 +156,20 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintHorizontal_bias="0.9"
             app:layout_constraintVertical_bias="0.86" />
+
+        <ImageButton
+            android:id="@+id/pauseButton"
+            android:layout_width="37dp"
+            android:layout_height="37dp"
+            android:backgroundTint="#00FFFFFF"
+            android:contentDescription="PauseButton"
+            android:src="@android:drawable/ic_media_pause"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.96"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.100000024" />
 
         <ImageButton
             android:id="@+id/brake"

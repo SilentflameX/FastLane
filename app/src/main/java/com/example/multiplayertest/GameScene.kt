@@ -40,6 +40,8 @@ object GameScene {
     private const val PLAYER_MAX_TURN_SPEED = 0.3f
     private const val PLAYER_TURN_SENSITIVITY = 0.2f
 
+    var gamePaused = false
+
     fun reset(){
         goList.clear()
         worldObjectList.clear()
@@ -55,6 +57,8 @@ object GameScene {
         playerAccelerating = false
         playerScore = 0
         playerLifes = 3
+
+        gamePaused = false
     }
 
     fun start() {
@@ -77,7 +81,7 @@ object GameScene {
     }
 
     fun update(deltaTime: Float) {
-        if(myPlayer == null)
+        if(myPlayer == null || gamePaused)
             return
 
         //Update pedals
