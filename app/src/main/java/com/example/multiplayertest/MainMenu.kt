@@ -60,11 +60,6 @@ class MainMenu : ComponentActivity() {
 
     private fun loadMainButtons(){
 
-        //Disable back button
-        onBackPressedDispatcher.addCallback(this) {
-            // Handle the back button event
-        }
-
         setContentView(R.layout.activity_main_menu)
 /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
